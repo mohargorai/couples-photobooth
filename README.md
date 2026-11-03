@@ -1,8 +1,7 @@
-# [Couples Photobooth](https://mohargorai.github.io/couples-photobooth/) • Soft Coquette & Hand-Drawn Studio
+# [Couples Photobooth](https://mohargorai.github.io/couples-photobooth/)
 
-> **[Open Live Web Application](https://mohargorai.github.io/couples-photobooth/)**
 > 
-> *made by mohar <3 for gungun <3*
+> *made by mohar with love for gungun <3 I love you baby <3*
 
 A bespoke, production-ready, interactive virtual couples photobooth web application designed as a romantic keepsake, handcrafted with love by **Mohar** for **Gungun**. Features live multiplayer peer-to-peer co-op rooms, advanced camera hardware controls, a 4-cut pose inspiration guide, 8 handcrafted border frame presets, 16 custom hand-drawn SVG stickers, and high-DPI Canvas export.
 
