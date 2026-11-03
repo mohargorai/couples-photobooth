@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 260" width="860" height="260">
+  <defs>
+    <style>
+      .banner-title {
+        font-family: 'Sacramento', 'Brush Script MT', 'Caveat', cursive, sans-serif;
+        font-size: 52px;
+        font-weight: bold;
+        fill: #5A3E42;
+      }
+      .banner-subtitle {
+        font-family: 'Caveat', 'Segoe Script', 'Comic Sans MS', cursive, sans-serif;
+        font-size: 20px;
+        letter-spacing: 2px;
+        fill: #D85A67;
+      }
+      .banner-dedication {
+        font-family: 'Caveat', cursive, sans-serif;
+        font-size: 17px;
+        font-style: italic;
+        fill: #8C6A70;
+      }
+      .banner-badge {
+        font-family: 'Nunito', 'Segoe UI', sans-serif;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        fill: #FFFFFF;
+      }
+    </style>
+    <linearGradient id="creamGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFDFE"/>
+      <stop offset="100%" stop-color="#FFF3F6"/>
+    </linearGradient>
+    <pattern id="dotPattern" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="10" cy="10" r="1.2" fill="#F3D5DC" opacity="0.6"/>
+    </pattern>
+  </defs>
+
+  <!-- Base Card with Soft Cream Gradient & Warm Cocoa Outline -->
+  <rect x="8" y="8" width="844" height="244" rx="24" fill="url(#creamGrad)" stroke="#5A3E42" stroke-width="2.5"/>
+  <rect x="14" y="14" width="832" height="232" rx="20" fill="url(#dotPattern)" opacity="0.5"/>
+
+  <!-- Scalloped Inner Frame Trim -->
+  <rect x="22" y="22" width="816" height="216" rx="16" fill="none" stroke="#E2B8BF" stroke-width="1.5" stroke-dasharray="6 6"/>
+
+  <!-- Decorative Corner Vignettes (Hand-drawn hearts) -->
+  <!-- Top Left Heart -->
+  <path d="M 42 42 C 40 37, 34 38, 34 44 C 34 50, 42 56, 42 56 C 42 56, 50 50, 50 44 C 50 38, 44 37, 42 42 Z" fill="#FFCCD7" stroke="#5A3E42" stroke-width="1.2"/>
+  <!-- Top Right Heart -->
+  <path d="M 818 42 C 816 37, 810 38, 810 44 C 810 50, 818 56, 818 56 C 818 56, 826 50, 826 44 C 826 38, 820 37, 818 42 Z" fill="#FFCCD7" stroke="#5A3E42" stroke-width="1.2"/>
+  <!-- Bottom Left Heart -->
+  <path d="M 42 208 C 40 203, 34 204, 34 210 C 34 216, 42 222, 42 222 C 42 222, 50 216, 50 210 C 50 204, 44 203, 42 208 Z" fill="#FFCCD7" stroke="#5A3E42" stroke-width="1.2"/>
+  <!-- Bottom Right Heart -->
+  <path d="M 818 208 C 816 203, 810 204, 810 210 C 810 216, 818 222, 818 222 C 818 222, 826 216, 826 210 C 826 204, 820 203, 818 208 Z" fill="#FFCCD7" stroke="#5A3E42" stroke-width="1.2"/>
+
+  <!-- Miniature Photobooth Strips on Left & Right -->
+  <!-- Left Strip: Tilted (-12 deg) -->
+  <g transform="translate(68, 48) rotate(-10)">
+    <rect x="0" y="0" width="56" height="150" rx="6" fill="#FFFFFF" stroke="#5A3E42" stroke-width="1.8"/>
+    <rect x="6" y="8" width="44" height="28" rx="3" fill="#FFEBF0" stroke="#E2B8BF" stroke-width="1"/>
+    <rect x="6" y="42" width="44" height="28" rx="3" fill="#FFF0F4" stroke="#E2B8BF" stroke-width="1"/>
+    <rect x="6" y="76" width="44" height="28" rx="3" fill="#FFEBF0" stroke="#E2B8BF" stroke-width="1"/>
+    <rect x="6" y="110" width="44" height="28" rx="3" fill="#FFF0F4" stroke="#E2B8BF" stroke-width="1"/>
+    <!-- Mini cut icons -->
+    <path d="M 28 20 C 26 18, 23 18, 23 21 C 23 24, 28 27, 28 27 C 28 27, 33 24, 33 21 C 33 18, 30 18, 28 20 Z" fill="#D85A67"/>
+    <circle cx="28" cy="56" r="4" fill="#FFCCD7"/>
+    <path d="M 28 88 C 26 86, 23 86, 23 89 C 23 92, 28 95, 28 95 C 28 95, 33 92, 33 89 C 33 86, 30 86, 28 88 Z" fill="#D85A67"/>
+  </g>
+
+  <!-- Right Strip: Tilted (+10 deg) -->
+  <g transform="translate(734, 42) rotate(10)">
+    <rect x="0" y="0" width="56" height="150" rx="6" fill="#FFFFFF" stroke="#5A3E42" stroke-width="1.8"/>
+    <rect x="6" y="8" width="44" height="28" rx="3" fill="#FFF0F4" stroke="#E2B8BF" stroke-width="1"/>
+    <rect x="6" y="42" width="44" height="28" rx="3" fill="#FFEBF0" stroke="#E2B8BF" stroke-width="1"/>
+    <rect x="6" y="76" width="44" height="28" rx="3" fill="#FFF0F4" stroke="#E2B8BF" stroke-width="1"/>
+    <rect x="6" y="110" width="44" height="28" rx="3" fill="#FFEBF0" stroke="#E2B8BF" stroke-width="1"/>
+    <path d="M 28 20 C 26 18, 23 18, 23 21 C 23 24, 28 27, 28 27 C 28 27, 33 24, 33 21 C 33 18, 30 18, 28 20 Z" fill="#D85A67"/>
+    <circle cx="28" cy="90" r="4" fill="#FFCCD7"/>
+  </g>
+
+  <!-- Center Artwork: Hand-Drawn Coquette Bow -->
+  <g transform="translate(430, 48)">
+    <!-- Left Ribbon Loop -->
+    <path d="M 0 0 C -22 -24, -46 -22, -48 -8 C -50 10, -22 14, 0 4" fill="#FFD1DC" stroke="#5A3E42" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M -36 -6 C -28 -2, -18 2, -5 2" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round"/>
+    
+    <!-- Right Ribbon Loop -->
+    <path d="M 0 0 C 22 -24, 46 -22, 48 -8 C 50 10, 22 14, 0 4" fill="#FFD1DC" stroke="#5A3E42" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 36 -6 C 28 -2, 18 2, 5 2" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round"/>
+
+    <!-- Left Ribbon Tail -->
+    <path d="M -4 5 C -12 16, -26 30, -32 38 C -26 36, -18 36, -12 39 C -6 28, -2 16, -1 6 Z" fill="#FFCCD7" stroke="#5A3E42" stroke-width="2.2" stroke-linejoin="round"/>
+    
+    <!-- Right Ribbon Tail -->
+    <path d="M 4 5 C 12 16, 26 30, 32 38 C 26 36, 18 36, 12 39 C 6 28, 2 16, 1 6 Z" fill="#FFCCD7" stroke="#5A3E42" stroke-width="2.2" stroke-linejoin="round"/>
+
+    <!-- Center Pearl Knot with Berry Red Accent -->
+    <ellipse cx="0" cy="2" rx="7" ry="8" fill="#D85A67" stroke="#5A3E42" stroke-width="2.2"/>
+    <circle cx="-2" cy="-0.5" r="2.2" fill="#FFFFFF"/>
+  </g>
+
+  <!-- Central Typography -->
+  <!-- Tagline Pill -->
+  <g transform="translate(340, 96)">
+    <rect x="0" y="0" width="180" height="22" rx="11" fill="#FFD1DC" stroke="#5A3E42" stroke-width="1.2"/>
+    <text x="90" y="15" text-anchor="middle" class="banner-badge">VIRTUAL COUPLES STUDIO</text>
+  </g>
+
+  <!-- Main Title -->
+  <text x="430" y="156" text-anchor="middle" class="banner-title">Our Little Photobooth</text>
+
+  <!-- Subtitle -->
+  <text x="430" y="188" text-anchor="middle" class="banner-subtitle">Together From Afar  •  Bespoke 4-Cut Studio</text>
+
+  <!-- Romantic Dedication Stamp -->
+  <text x="430" y="216" text-anchor="middle" class="banner-dedication">~ made by mohar &lt;3 for gungun &lt;3 ~</text>
+</svg>

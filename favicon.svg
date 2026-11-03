@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Soft Cream Rounded Badge Base -->
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="#FFF9FB" stroke="#5A3E42" stroke-width="2.5"/>
+  
+  <!-- Miniature Tilted Photobooth Strip Backdrop -->
+  <g transform="rotate(-6 32 32)">
+    <rect x="14" y="9" width="36" height="46" rx="5" fill="#FFFFFF" stroke="#E2B8BF" stroke-width="1.8"/>
+    <!-- Mini Photo Slot Windows -->
+    <rect x="18" y="13" width="28" height="13" rx="2" fill="#FFEBF0"/>
+    <rect x="18" y="29" width="28" height="13" rx="2" fill="#FFF0F4"/>
+    <!-- Tiny Sketch Dotted Heart in top slot -->
+    <path d="M 32 17 C 30 15, 27 16, 27 19 C 27 22, 32 25, 32 25 C 32 25, 37 22, 37 19 C 37 16, 34 15, 32 17 Z" fill="#D85A67"/>
+  </g>
+
+  <!-- Dainty Hand-Drawn Coquette Bow Foreground -->
+  <g id="coquette-bow">
+    <!-- Left Ribbon Loop -->
+    <path d="M 32 34 C 23 21, 9 19, 8 28 C 7 38, 22 41, 32 36" fill="#FFD1DC" stroke="#5A3E42" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 16 27 C 20 29, 25 32, 29 34" fill="none" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round"/>
+    
+    <!-- Right Ribbon Loop -->
+    <path d="M 32 34 C 41 21, 55 19, 56 28 C 57 38, 42 41, 32 36" fill="#FFD1DC" stroke="#5A3E42" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 48 27 C 44 29, 39 32, 35 34" fill="none" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round"/>
+
+    <!-- Left Ribbon Tail -->
+    <path d="M 29 37 C 25 43, 17 51, 13 56 C 17 55, 22 55, 26 57 C 29 50, 31 43, 31 38 Z" fill="#FFCCD7" stroke="#5A3E42" stroke-width="2" stroke-linejoin="round"/>
+    
+    <!-- Right Ribbon Tail -->
+    <path d="M 35 37 C 39 43, 47 51, 51 56 C 47 55, 42 55, 38 57 C 35 50, 33 43, 33 38 Z" fill="#FFCCD7" stroke="#5A3E42" stroke-width="2" stroke-linejoin="round"/>
+
+    <!-- Center Pearl Knot with Rose Berry Accent -->
+    <ellipse cx="32" cy="35" rx="4.5" ry="5.5" fill="#D85A67" stroke="#5A3E42" stroke-width="2"/>
+    <circle cx="31" cy="33.5" r="1.3" fill="#FFFFFF"/>
+  </g>
+</svg>

@@ -1,0 +1,17 @@
+{
+  "name": "Our Little Photobooth",
+  "short_name": "Photobooth",
+  "description": "A bespoke, handcrafted virtual couples photobooth designed for taking sweet memories together from afar.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#FFF9FB",
+  "theme_color": "#FFF9FB",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
