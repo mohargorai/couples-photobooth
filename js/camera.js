@@ -72,9 +72,11 @@ class PhotoboothCamera {
       throw new Error('Webcam API is not supported in this browser.');
     }
 
+    // Ultra-low-latency real-time video constraints (avoids 1080p buffer bloat over WebRTC)
     const videoConstraints = {
-      width: { ideal: 1920, min: 640 },
-      height: { ideal: 1080, min: 480 }
+      width: { ideal: 640, max: 1280 },
+      height: { ideal: 480, max: 720 },
+      frameRate: { ideal: 30, max: 30 }
     };
 
     if (this.currentDeviceId) {
@@ -95,8 +97,9 @@ class PhotoboothCamera {
           console.warn('Exact deviceId request failed, falling back to default camera:', deviceErr);
           stream = await navigator.mediaDevices.getUserMedia({
             video: {
-              width: { ideal: 1920, min: 640 },
-              height: { ideal: 1080, min: 480 },
+              width: { ideal: 640, max: 1280 },
+              height: { ideal: 480, max: 720 },
+              frameRate: { ideal: 30, max: 30 },
               facingMode: { ideal: this.currentFacingMode }
             },
             audio: false

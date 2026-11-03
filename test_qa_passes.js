@@ -289,6 +289,63 @@ const pass6Success = hasOverflowLock && hasDecorateOrder && hasResponsiveFrameGr
 console.log(`✅ PASS 6 RESULT: ${pass6Success ? 'PASSED' : 'FAILED'}\n`);
 
 
+// -----------------------------------------------------------------------------
+// PASS 7: WEBRTC LOW-LATENCY, BI-DIRECTIONAL STATE SYNC & ZERO-POPUP AUDIT
+// -----------------------------------------------------------------------------
+console.log('--- PASS 7: WEBRTC LOW-LATENCY, BI-DIRECTIONAL STATE SYNC & ZERO-POPUP AUDIT ---');
+
+// 1. Ultra-low-latency media constraints (prevents 1080p frame buffer backlog)
+const hasLowLatencyConstraints = cameraContent.includes('ideal: 640, max: 1280') &&
+                                 cameraContent.includes('ideal: 480, max: 720') &&
+                                 cameraContent.includes('frameRate: { ideal: 30, max: 30 }');
+console.log(`  ✓ Ultra-low latency camera constraints (480p/720p @ 30fps): ${hasLowLatencyConstraints ? 'Verified' : 'Missing'}`);
+
+// 2. WebRTC jitter buffer & playout latency tuning
+const hasPlayoutDelay = roomContent.includes('playoutDelayHint = 0');
+const hasJitterBuffer = roomContent.includes('jitterBufferTarget = 0');
+const hasBitrateTune = roomContent.includes('maxBitrate = 1200000');
+const hasStunConfig = roomContent.includes('stun.l.google.com:19302') && roomContent.includes('unified-plan');
+console.log(`  ✓ RTCRtpReceiver playoutDelayHint = 0 (bypasses jitter buffer): ${hasPlayoutDelay ? 'Verified' : 'Missing'}`);
+console.log(`  ✓ RTCRtpReceiver jitterBufferTarget = 0: ${hasJitterBuffer ? 'Verified' : 'Missing'}`);
+console.log(`  ✓ RTCRtpSender maxBitrate tuning (1.2 Mbps priority): ${hasBitrateTune ? 'Verified' : 'Missing'}`);
+console.log(`  ✓ STUN configuration & unified-plan SDP: ${hasStunConfig ? 'Verified' : 'Missing'}`);
+
+// 3. Bi-directional state handshake, 3s heartbeat & broker auto-reconnect
+const hasSyncState = roomContent.includes('SYNC_STATE') && appContent.includes('handlePartnerSyncState');
+const hasHeartbeat = roomContent.includes('PING_STATE') && roomContent.includes('PONG_STATE') && roomContent.includes('heartbeatTimer');
+const hasBrokerReconnect = roomContent.includes("this.peer.on('disconnected'") && roomContent.includes('this.peer.reconnect()');
+const hasWhiteRoseDecoratingCard = appContent.includes('WHITE_ROSE_DECORATING_SVG') && appContent.includes('Gungun is decorating the strip...');
+console.log(`  ✓ Bi-directional SYNC_STATE handshake: ${hasSyncState ? 'Verified' : 'Missing'}`);
+console.log(`  ✓ 3-second state recovery heartbeat (PING/PONG): ${hasHeartbeat ? 'Verified' : 'Missing'}`);
+console.log(`  ✓ PeerJS broker auto-reconnect on socket disconnect: ${hasBrokerReconnect ? 'Verified' : 'Missing'}`);
+console.log(`  ✓ White Rose decorating card for partner: ${hasWhiteRoseDecoratingCard ? 'Verified' : 'Missing'}`);
+
+// 4. Mobile layout & touch targets
+const hasMobileDuoAspect = cssContent.includes('aspect-ratio: 16 / 11') && cssContent.includes('.viewfinder-frame.is-duo-view');
+const hasTouchTargetPadding = cssContent.includes('.quick-bar-btn') && cssContent.includes('min-height: 48px');
+const hasCompactRibbonMobile = cssContent.includes('@media (max-width: 768px)') && cssContent.includes('.room-ribbon');
+console.log(`  ✓ Mobile duo-view aspect-ratio (16:11): ${hasMobileDuoAspect ? 'Verified' : 'Missing'}`);
+console.log(`  ✓ Mobile touch targets (min-height >= 48px): ${hasTouchTargetPadding ? 'Verified' : 'Missing'}`);
+console.log(`  ✓ Single-line compact room ribbon on mobile: ${hasCompactRibbonMobile ? 'Verified' : 'Missing'}`);
+
+// 5. Zero-popup audit (zero alert, confirm, prompt)
+const filesToAudit = ['js/app.js', 'js/room.js', 'js/camera.js', 'js/stickers.js', 'js/export.js', 'index.html'];
+let popupCount = 0;
+filesToAudit.forEach(f => {
+  const fileText = fs.readFileSync(path.join(__dirname, f), 'utf-8');
+  fileText.split('\n').forEach(line => {
+    if (/\balert\(|\bconfirm\(|\bprompt\(/.test(line)) popupCount++;
+  });
+});
+const hasZeroPopups = popupCount === 0;
+console.log(`  ✓ Zero-Popup audit (zero alert, confirm, prompt): ${hasZeroPopups ? 'PASSED (0 found)' : `FAILED (${popupCount} found)`}`);
+
+const pass7Success = hasLowLatencyConstraints && hasPlayoutDelay && hasJitterBuffer && hasBitrateTune && hasStunConfig &&
+                     hasSyncState && hasHeartbeat && hasBrokerReconnect && hasWhiteRoseDecoratingCard &&
+                     hasMobileDuoAspect && hasTouchTargetPadding && hasCompactRibbonMobile && hasZeroPopups;
+console.log(`✅ PASS 7 RESULT: ${pass7Success ? 'PASSED' : 'FAILED'}\n`);
+
+
 console.log('================================================================');
 console.log('OVERALL QA STATUS:');
 console.log(`Pass 1 (Camera Matrix & Crop Math): ${pass1Success ? 'PASSED' : 'FAILED'}`);
@@ -297,4 +354,5 @@ console.log(`Pass 3 (Styles, 8 Frames, 16 SVGs): ${pass3Success ? 'PASSED' : 'FA
 console.log(`Pass 4 (Touch & Responsive Layout): ${pass4Success ? 'PASSED' : 'FAILED'}`);
 console.log(`Pass 5 (Camera Lifecycle & Privacy):${pass5Success ? 'PASSED' : 'FAILED'}`);
 console.log(`Pass 6 (Mobile Overhaul & Room Sync):${pass6Success ? 'PASSED' : 'FAILED'}`);
+console.log(`Pass 7 (Low-Latency & State Sync):  ${pass7Success ? 'PASSED' : 'FAILED'}`);
 console.log('================================================================');

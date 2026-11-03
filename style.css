@@ -98,26 +98,30 @@ body {
 
 .ribbon-toast {
   position: fixed;
-  top: 20px;
+  top: 18px;
   left: 50%;
   transform: translateX(-50%);
-  background: #FFFFFF;
-  border: 2px solid var(--accent-berry-red);
-  box-shadow: 0 8px 30px rgba(216, 90, 103, 0.25);
+  background: #FFFDFE;
+  border: 1.8px solid var(--accent-berry-red);
+  box-shadow: 0 8px 30px rgba(90, 62, 66, 0.15), 0 2px 8px rgba(216, 90, 103, 0.2);
   border-radius: var(--radius-full);
-  padding: 10px 22px;
+  padding: 8px 20px;
   z-index: 1000;
-  animation: toastSlideDown 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  animation: toastSlideDown 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  max-width: 90vw;
+  box-sizing: border-box;
 }
 
 .toast-content {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   color: var(--text-cocoa);
   font-family: var(--font-hand);
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 @keyframes toastSlideDown {
@@ -432,15 +436,18 @@ body {
   height: 9px;
   border-radius: 50%;
   background: #B8999E;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
 }
 
 .status-pulse.is-online {
   background: #48BB78;
-  box-shadow: 0 0 6px #48BB78;
+  box-shadow: 0 0 8px rgba(72, 187, 120, 0.7);
 }
 
 .status-pulse.is-waiting {
-  background: #ED8936;
+  background: #F48FB1;
+  box-shadow: 0 0 8px rgba(244, 143, 177, 0.7);
   animation: pulseBlink 1.2s infinite;
 }
 
@@ -453,20 +460,76 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .room-ribbon {
+    padding: 6px 12px;
+    min-height: 40px;
+    border-radius: var(--radius-full);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: nowrap;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .room-ribbon-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    flex-wrap: nowrap;
+  }
+
+  #room-status-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .room-code-tag {
+    padding: 2px 6px;
+    font-size: 0.74rem;
+    flex-shrink: 0;
+  }
+
+  .room-ribbon-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    flex-wrap: nowrap;
+  }
+
+  .btn-ribbon-action {
+    min-height: 28px;
+    padding: 3px 10px;
+    font-size: 0.76rem;
+    white-space: nowrap;
+  }
 }
 
 @media (max-width: 480px) {
   .room-ribbon {
-    gap: 10px;
+    padding: 5px 10px;
+    gap: 6px;
   }
   .room-ribbon-left {
-    width: 100%;
-    justify-content: space-between;
+    font-size: 0.78rem;
   }
-  .room-ribbon-actions {
-    width: 100%;
-    justify-content: flex-end;
+  .btn-ribbon-action {
+    padding: 2px 8px;
+    font-size: 0.74rem;
   }
 }
 
@@ -684,6 +747,13 @@ body {
   display: flex !important;
 }
 
+@media (max-width: 768px) {
+  .viewfinder-frame.is-duo-view {
+    aspect-ratio: 16 / 11;
+    max-height: 290px;
+  }
+}
+
 /* Camera Resting Placeholder Card (Milky Cream & Baby Pink) */
 .camera-off-placeholder {
   position: absolute;
@@ -857,31 +927,51 @@ body {
 .viewfinder-quick-bar {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 8px;
-  padding: 2px 0;
+  padding: 4px 0;
+  width: 100%;
 }
 
 .quick-bar-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  min-height: 38px;
-  padding: 4px 14px;
+  min-height: 48px;
+  padding: 8px 14px;
   background: var(--bg-surface-tint);
   border: 1.4px solid var(--border-subtle);
   border-radius: var(--radius-full);
   color: var(--text-cocoa);
   font-family: var(--font-ui);
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
+  flex: 1;
 }
 
 .quick-bar-btn:hover {
   background: #FFE4E8;
   border-color: var(--accent-berry-red);
+}
+
+.quick-bar-btn:active {
+  transform: scale(0.97);
+}
+
+@media (max-width: 480px) {
+  .viewfinder-quick-bar {
+    gap: 6px;
+    padding: 2px 0;
+  }
+  .quick-bar-btn {
+    min-height: 44px;
+    padding: 6px 8px;
+    font-size: 0.78rem;
+    gap: 4px;
+  }
 }
 
 /* Main Shutter Button Directly Below Viewfinder */
@@ -896,7 +986,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  min-height: 50px;
+  min-height: 52px;
   padding: 10px 24px;
   background: linear-gradient(135deg, #FFD1DC 0%, #F8BBD0 50%, #D85A67 100%);
   color: var(--text-cocoa);
@@ -913,6 +1003,10 @@ body {
 .btn-primary:hover {
   transform: translateY(-2px) scale(1.01);
   box-shadow: 0 6px 20px rgba(216, 90, 103, 0.35);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
 }
 
 .shutter-big-btn {

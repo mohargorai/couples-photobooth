@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Toast Helper
   let toastTimer = null;
-  function showToast(message, duration = 3500) {
+  function showToast(message, duration = 2500) {
     if (!ribbonToast) return;
     toastMessage.textContent = message;
     ribbonToast.classList.remove('is-hidden');
@@ -258,12 +258,52 @@ document.addEventListener('DOMContentLoaded', () => {
     syncStripToPartner();
   };
 
+  // White Rose and Camera-Off SVGs for partner status card
+  const WHITE_ROSE_DECORATING_SVG = `<svg viewBox="0 0 32 32" width="28" height="28" fill="none">
+    <path d="M16 9 C14 9 13 11 13 13 C13 15.5 15 17 16 17 C17 17 19 15.5 19 13 C19 11 18 9 16 9 Z" fill="#FFFDF7" stroke="#5A3E42" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M14.5 12 C14.5 10.5 15.5 10 16 10 C16.8 10 17.5 10.8 17.5 11.8 C17.5 13 16.5 13.5 15.5 14" stroke="#5A3E42" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M12 12 C10 13.5 10 16 11.5 17.5 C13 19 15 19.5 16 19.5 C17 19.5 19 19 20.5 17.5 C22 16 22 13.5 20 12" fill="#FFFFFF" stroke="#5A3E42" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M9 14 C7.5 16.5 8 20 11 22 C13 23.5 16 24 16 24 C16 24 19 23.5 21 22 C24 20 24.5 16.5 23 14" fill="#FFFFFF" stroke="#5A3E42" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M15 15.5 C15.5 16 16.5 16 17 15.5" stroke="#F7E6EA" stroke-width="1.5" stroke-linecap="round"/>
+  </svg>`;
+
+  const CAMERA_RESTING_SVG = `<svg viewBox="0 0 20 20" width="28" height="28" fill="none" stroke="#D85A67" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 3 6 C 3 4.8 4 4 5 4 L 7 4 L 8.5 2 L 11.5 2 L 13 4 L 15 4 C 16.2 4 17 4.8 17 6 L 17 14 C 17 15.2 16.2 16 15 16 L 5 16 C 4 16 3 15.2 3 14 Z"/>
+    <line x1="2" y1="2" x2="18" y2="18"/>
+  </svg>`;
+
+  function handlePartnerSyncState({ activeTab, cameraActive }) {
+    if (!partnerCameraOffCard) return;
+    const textEl = document.getElementById('partner-off-text') || partnerCameraOffCard.querySelector('.partner-off-text');
+    const iconEl = document.getElementById('partner-card-icon');
+
+    if (activeTab === 'shoot' && cameraActive) {
+      partnerCameraOffCard.classList.add('is-hidden');
+      if (remoteWebcamEl && remoteWebcamEl.paused) {
+        remoteWebcamEl.play().catch(() => {});
+      }
+    } else if (activeTab === 'decorate') {
+      partnerCameraOffCard.classList.remove('is-hidden');
+      if (textEl) textEl.textContent = 'Gungun is decorating the strip...';
+      if (iconEl) iconEl.innerHTML = WHITE_ROSE_DECORATING_SVG;
+    } else {
+      // activeTab === 'shoot' && !cameraActive
+      partnerCameraOffCard.classList.remove('is-hidden');
+      if (textEl) textEl.textContent = "Partner's camera is resting";
+      if (iconEl) iconEl.innerHTML = CAMERA_RESTING_SVG;
+    }
+  }
+
   // Real-Time WebRTC Together Room
   const room = new TogetherRoom({
     onRemoteStream: (stream) => {
       remoteWebcamEl.srcObject = stream;
+      remoteWebcamEl.playsInline = true;
+      remoteWebcamEl.autoplay = true;
+      remoteWebcamEl.muted = true;
       remoteWebcamEl.play().catch(() => {});
       viewfinderFrameEl.classList.add('is-duo-view');
+      if (partnerCameraOffCard) partnerCameraOffCard.classList.add('is-hidden');
       window.photoboothAudio.playOpenEnvelope();
       showToast('Partner connected! You are both in the room.');
     },
@@ -274,9 +314,10 @@ document.addEventListener('DOMContentLoaded', () => {
     },
 
     onRemoteCameraState: (active) => {
-      if (partnerCameraOffCard) {
-        partnerCameraOffCard.classList.toggle('is-hidden', !!active);
-      }
+      handlePartnerSyncState({
+        activeTab: state.currentPhase,
+        cameraActive: !!active
+      });
     },
 
     onRemoteDisconnected: () => {
@@ -294,27 +335,15 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('Partner left the room.');
     },
 
+    onSyncState: (data) => {
+      handlePartnerSyncState(data);
+    },
+
     onStatusUpdate: (data) => {
-      if (data.currentTab === 'decorate') {
-        if (partnerCameraOffCard) {
-          partnerCameraOffCard.classList.remove('is-hidden');
-          const textEl = partnerCameraOffCard.querySelector('.partner-off-text');
-          if (textEl) textEl.textContent = "Partner's camera is paused while decorating";
-        }
-      } else if (data.currentTab === 'shoot') {
-        if (data.cameraEnabled) {
-          if (partnerCameraOffCard) partnerCameraOffCard.classList.add('is-hidden');
-          if (remoteWebcamEl && remoteWebcamEl.paused) {
-            remoteWebcamEl.play().catch(() => {});
-          }
-        } else {
-          if (partnerCameraOffCard) {
-            partnerCameraOffCard.classList.remove('is-hidden');
-            const textEl = partnerCameraOffCard.querySelector('.partner-off-text');
-            if (textEl) textEl.textContent = "Partner turned camera off";
-          }
-        }
-      }
+      handlePartnerSyncState({
+        activeTab: data.currentTab || 'shoot',
+        cameraActive: !!data.cameraEnabled
+      });
     },
 
     onStatusRequest: () => {
@@ -322,6 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentTab: state.currentPhase,
         cameraEnabled: state.isCameraActive
       });
+      room.broadcastSyncState(state.currentPhase, state.isCameraActive);
       if (room.isHost) {
         syncStripToPartner();
       }
@@ -557,11 +587,13 @@ document.addEventListener('DOMContentLoaded', () => {
           if (state.mode === 'room' && room.isConnected) {
             if (stream) room.updateLocalStream(stream);
             room.broadcastPeerStatus({ currentTab: 'shoot', cameraEnabled: state.isCameraActive });
+            room.broadcastSyncState('shoot', state.isCameraActive);
             room.requestPeerStatus();
           }
         });
       } else if (state.mode === 'room' && room.isConnected) {
         room.broadcastPeerStatus({ currentTab: 'shoot', cameraEnabled: false });
+        room.broadcastSyncState('shoot', false);
         room.requestPeerStatus();
       }
     } else {
@@ -578,6 +610,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         state.isCameraActive = false;
         room.broadcastPeerStatus({ currentTab: 'decorate', cameraEnabled: false });
+        room.broadcastSyncState('decorate', false);
       } else {
         // Automatically release camera hardware when leaving Pose & Shoot
         disableCamera(false);
@@ -729,6 +762,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (state.mode === 'room') {
         room.updateLocalStream(stream);
         room.broadcastCameraState(true);
+        room.broadcastSyncState('shoot', true);
       }
       return stream;
     } catch (err) {
@@ -761,6 +795,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (state.mode === 'room' && room.isConnected) {
       room.broadcastCameraState(false);
+      room.broadcastSyncState(state.currentPhase, false);
     }
   }
 
@@ -864,8 +899,9 @@ document.addEventListener('DOMContentLoaded', () => {
       syncStripToPartner();
       state.activeSlotIndex = (state.activeSlotIndex + 1) % 4;
       highlightActiveSlotTile();
+      showToast('Photo added to strip!');
     } catch (err) {
-      alert(err.message || 'Failed to process image');
+      showToast(err.message || 'Failed to process image');
     }
     inputGalleryUpload.value = '';
   });
@@ -911,7 +947,7 @@ document.addEventListener('DOMContentLoaded', () => {
         room.updateLocalStream(camera.stream);
       }
     } catch (err) {
-      alert('Could not start multiplayer room. Check connection.');
+      showToast('Could not start multiplayer room • Check connection');
     }
   });
 
@@ -920,11 +956,30 @@ document.addEventListener('DOMContentLoaded', () => {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(inviteUrl).then(() => {
         showToast('Invite link copied! Send this to her');
+      }).catch(() => {
+        fallbackCopyInvite(inviteUrl);
       });
     } else {
-      prompt('Copy this link to invite your partner:', inviteUrl);
+      fallbackCopyInvite(inviteUrl);
     }
   });
+
+  function fallbackCopyInvite(text) {
+    try {
+      const el = document.createElement('textarea');
+      el.value = text;
+      el.setAttribute('readonly', '');
+      el.style.position = 'absolute';
+      el.style.left = '-9999px';
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      showToast('Invite link copied! Send this to her');
+    } catch (e) {
+      showToast('Invite link ready to share');
+    }
+  }
 
   btnLeaveRoom.addEventListener('click', () => {
     room.leaveRoom();
@@ -1011,20 +1066,25 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const dataUrl = await PhotoboothCamera.processUploadedImage(file, 600, 450);
         if (state.mode === 'together' || state.mode === 'room') {
-          const assignToPartner = confirm('Assign this upload to your Partner? Click OK for Partner, or Cancel for Yourself.');
-          if (assignToPartner) {
+          if (!state.userPhotos[index]) {
+            state.userPhotos[index] = dataUrl;
+            showToast(`Saved photo to Slot ${index + 1} for you!`);
+          } else if (!state.togetherPhotos[index]) {
             state.togetherPhotos[index] = dataUrl;
+            showToast(`Saved photo to Slot ${index + 1} for partner!`);
           } else {
             state.userPhotos[index] = dataUrl;
+            showToast(`Updated Slot ${index + 1}!`);
           }
         } else {
           state.userPhotos[index] = dataUrl;
+          showToast(`Saved photo to Slot ${index + 1}!`);
         }
         updateStripDOM();
         saveStripStateToSession();
         syncStripToPartner();
       } catch (err) {
-        alert(err.message || 'Failed to upload photo');
+        showToast(err.message || 'Failed to upload photo');
       }
       uploadInput.value = '';
     });
