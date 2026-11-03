@@ -10,7 +10,8 @@ class TogetherRoom {
     onRemoteDisconnected,
     onCountdownSync,
     onCustomizationSync,
-    onStatusChange
+    onStatusChange,
+    onRemoteCameraState
   }) {
     this.peer = null;
     this.conn = null;
@@ -28,6 +29,7 @@ class TogetherRoom {
     this.onCountdownSync = onCountdownSync || (() => {});
     this.onCustomizationSync = onCustomizationSync || (() => {});
     this.onStatusChange = onStatusChange || (() => {});
+    this.onRemoteCameraState = onRemoteCameraState || (() => {});
   }
 
   /**
@@ -252,6 +254,10 @@ class TogetherRoom {
         this.onCustomizationSync(data);
         break;
 
+      case 'CAMERA_STATE':
+        this.onRemoteCameraState(data.active);
+        break;
+
       case 'DISCONNECT':
         this.handleRemoteLeave();
         break;
@@ -259,6 +265,13 @@ class TogetherRoom {
       default:
         break;
     }
+  }
+
+  /**
+   * Broadcast camera power/active state to peer
+   */
+  broadcastCameraState(active) {
+    this.broadcast({ type: 'CAMERA_STATE', active: !!active });
   }
 
   /**

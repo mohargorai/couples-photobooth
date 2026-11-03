@@ -202,10 +202,49 @@ const pass4Success = hasTouchActionNone && hasResponsiveBreakpoints && hasToastS
 console.log(`✅ PASS 4 RESULT: ${pass4Success ? 'PASSED' : 'FAILED'}\n`);
 
 
+// -----------------------------------------------------------------------------
+// PASS 5: CAMERA LIFECYCLE & PRIVACY TOGGLE AUDIT
+// -----------------------------------------------------------------------------
+console.log('--- PASS 5: CAMERA LIFECYCLE & PRIVACY TOGGLE AUDIT ---');
+
+const appContent = fs.readFileSync(path.join(__dirname, 'js/app.js'), 'utf-8');
+const cameraContent = fs.readFileSync(path.join(__dirname, 'js/camera.js'), 'utf-8');
+const roomContent = fs.readFileSync(path.join(__dirname, 'js/room.js'), 'utf-8');
+const htmlContent = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf-8');
+
+// 1. Hardware LED release verification
+const hasTrackStop = cameraContent.includes('track.stop()');
+const hasSrcObjectNull = cameraContent.includes('video.srcObject = null');
+console.log(`  ✓ Hardware video track.stop() release: ${hasTrackStop ? 'Verified' : 'Missing'}`);
+console.log(`  ✓ Video srcObject unbind (video.srcObject = null): ${hasSrcObjectNull ? 'Verified' : 'Missing'}`);
+
+// 2. Camera On/Off button & placeholder card
+const hasPowerBtn = htmlContent.includes('id="btn-toggle-cam-power"');
+const hasPlaceholderCard = htmlContent.includes('id="camera-off-placeholder"') && htmlContent.includes('Camera is resting');
+const hasWakeBtn = htmlContent.includes('id="btn-turn-cam-on"');
+console.log(`  ✓ Camera On/Off toolbar toggle button: ${hasPowerBtn ? 'Verified' : 'Missing'}`);
+console.log(`  ✓ Resting aesthetic placeholder card: ${hasPlaceholderCard ? 'Verified' : 'Missing'}`);
+console.log(`  ✓ Camera wake action button: ${hasWakeBtn ? 'Verified' : 'Missing'}`);
+
+// 3. Tab switch auto-shutoff & visibilitychange listener
+const hasTabAutoShutoff = appContent.includes('disableCamera(false)') && appContent.includes('setWorkflowPhase');
+const hasVisibilityChange = appContent.includes('visibilitychange') && appContent.includes('document.hidden');
+console.log(`  ✓ Tab switch camera auto-shutoff (Decorate / Letter): ${hasTabAutoShutoff ? 'Verified' : 'Missing'}`);
+console.log(`  ✓ Background tab visibilitychange listener: ${hasVisibilityChange ? 'Verified' : 'Missing'}`);
+
+// 4. Together Room WebRTC signaling for camera pause
+const hasCameraStateSignal = roomContent.includes('CAMERA_STATE') && roomContent.includes('broadcastCameraState');
+console.log(`  ✓ Together Room CAMERA_STATE signaling: ${hasCameraStateSignal ? 'Verified' : 'Missing'}`);
+
+const pass5Success = hasTrackStop && hasSrcObjectNull && hasPowerBtn && hasPlaceholderCard && hasWakeBtn && hasTabAutoShutoff && hasVisibilityChange && hasCameraStateSignal;
+console.log(`✅ PASS 5 RESULT: ${pass5Success ? 'PASSED' : 'FAILED'}\n`);
+
+
 console.log('================================================================');
 console.log('OVERALL QA STATUS:');
 console.log(`Pass 1 (Camera Matrix & Crop Math): ${pass1Success ? 'PASSED' : 'FAILED'}`);
 console.log(`Pass 2 (Room & Routing):            ${pass2Success ? 'PASSED' : 'FAILED'}`);
 console.log(`Pass 3 (Styles, 8 Frames, 16 SVGs): ${pass3Success ? 'PASSED' : 'FAILED'}`);
 console.log(`Pass 4 (Touch & Responsive Layout): ${pass4Success ? 'PASSED' : 'FAILED'}`);
+console.log(`Pass 5 (Camera Lifecycle & Privacy):${pass5Success ? 'PASSED' : 'FAILED'}`);
 console.log('================================================================');

@@ -65,6 +65,7 @@ This project follows a strict **anti-AI-slop, zero-emoji aesthetic philosophy**:
 - **Real-Time Studio Mirroring:** Frame choices, sticker additions, handwritten captions, and ink selections sync live across both screens.
 
 ### 2. Camera Hardware &amp; Orientation Suite
+- **Smart Camera Lifecycle &amp; Privacy Toggle:** Dedicated **Cam On / Off** toolbar toggle completely stops active hardware video tracks (`track.stop()`) and unbinds `srcObject = null` to immediately turn off physical webcam lights and mobile green privacy dots. Automatically shuts down the camera when switching to "2. Decorate Strip", clicking "&lt;- Letter", or minimizing the browser (`visibilitychange`), showing a cozy "Camera is resting" White Rose card with one-tap wake up.
 - **Camera Device Enumerator:** Switch seamlessly between built-in webcams, USB cameras, OBS Virtual Camera, or front/back smartphone sensors without page reloads.
 - **Multi-Axis Alignment:**
   - `Mirror X`: Flip horizontally for a natural selfie-mirror reflection.

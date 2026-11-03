@@ -29,6 +29,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const toastMessage = document.getElementById('toast-message');
 
   // Hardware Controls
+  const btnToggleCamPower = document.getElementById('btn-toggle-cam-power');
+  const camPowerLabel = document.getElementById('cam-power-label');
+  const cameraOffPlaceholder = document.getElementById('camera-off-placeholder');
+  const btnTurnCamOn = document.getElementById('btn-turn-cam-on');
+  const partnerCameraOffCard = document.getElementById('partner-camera-off-card');
   const cameraSelect = document.getElementById('camera-select');
   const btnMirrorH = document.getElementById('btn-mirror-h');
   const btnFlipV = document.getElementById('btn-flip-v');
@@ -111,6 +116,8 @@ document.addEventListener('DOMContentLoaded', () => {
     userPhotos: [null, null, null, null],
     togetherPhotos: [null, null, null, null],
     isMuted: false,
+    isCameraActive: true,
+    cameraManuallyTurnedOff: false,
     remoteTransform: { mirrorH: true, flipV: false, rotation: 0 }
   };
 
@@ -144,6 +151,12 @@ document.addEventListener('DOMContentLoaded', () => {
     onRemoteTransform: (transform) => {
       state.remoteTransform = transform;
       camera.applyViewfinderTransform(remoteWebcamEl, transform);
+    },
+
+    onRemoteCameraState: (active) => {
+      if (partnerCameraOffCard) {
+        partnerCameraOffCard.classList.toggle('is-hidden', !!active);
+      }
     },
 
     onRemoteDisconnected: () => {
@@ -245,8 +258,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const deviceId = e.target.value;
     try {
       const stream = await camera.selectDevice(deviceId);
+      state.isCameraActive = true;
+      state.cameraManuallyTurnedOff = false;
+      if (cameraOffPlaceholder) cameraOffPlaceholder.classList.add('is-hidden');
+      if (localVideoBox) localVideoBox.classList.remove('is-hidden');
+      if (btnToggleCamPower) {
+        btnToggleCamPower.classList.add('is-active-toggle');
+        btnToggleCamPower.title = 'Turn Camera Off';
+      }
+      if (camPowerLabel) camPowerLabel.textContent = 'Cam On';
+      if (btnStartSession) {
+        btnStartSession.classList.remove('is-disabled');
+        btnStartSession.removeAttribute('aria-disabled');
+      }
       if (state.mode === 'room') {
         room.updateLocalStream(stream);
+        room.broadcastCameraState(true);
       }
     } catch (err) {
       console.warn('Failed to switch camera device:', err);
@@ -298,12 +325,20 @@ document.addEventListener('DOMContentLoaded', () => {
       tabPhaseDecorate.classList.remove('is-active');
       panelShoot.classList.remove('is-hidden');
       panelDecorate.classList.add('is-hidden');
+
+      // Seamlessly restart camera if not manually toggled off
+      if (!state.cameraManuallyTurnedOff) {
+        enableCamera(false);
+      }
     } else {
       tabPhaseShoot.classList.remove('is-active');
       tabPhaseDecorate.classList.add('is-active');
       panelShoot.classList.add('is-hidden');
       panelDecorate.classList.remove('is-hidden');
       stickers.recalculateLayout();
+
+      // Automatically release camera hardware when leaving Pose & Shoot
+      disableCamera(false);
     }
   }
 
@@ -389,7 +424,9 @@ document.addEventListener('DOMContentLoaded', () => {
         welcomeRibbonBtn.classList.remove('is-untying');
         isDismissingWelcome = false;
       }, 500);
-      initWebcam();
+      if (!state.cameraManuallyTurnedOff) {
+        enableCamera(false);
+      }
     }, 550);
   }
 
@@ -399,6 +436,8 @@ document.addEventListener('DOMContentLoaded', () => {
   btnStartRoom.addEventListener('click', () => dismissWelcome('room'));
 
   btnBackWelcome.addEventListener('click', () => {
+    // Automatically stop hardware camera stream when returning to letter
+    disableCamera(false);
     welcomeModal.classList.remove('is-hidden');
     setTimeout(() => {
       welcomeModal.classList.remove('is-dismissed');
@@ -419,17 +458,110 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Camera Initialization
-  async function initWebcam() {
+  // Camera Power & Lifecycle Management
+  async function enableCamera(force = false) {
+    if (!force && state.cameraManuallyTurnedOff) {
+      return null;
+    }
+    state.cameraManuallyTurnedOff = false;
+    state.isCameraActive = true;
+
+    if (cameraOffPlaceholder) cameraOffPlaceholder.classList.add('is-hidden');
+    if (localVideoBox) localVideoBox.classList.remove('is-hidden');
+    if (btnToggleCamPower) {
+      btnToggleCamPower.classList.add('is-active-toggle');
+      btnToggleCamPower.title = 'Turn Camera Off';
+    }
+    if (camPowerLabel) camPowerLabel.textContent = 'Cam On';
+    if (btnStartSession) {
+      btnStartSession.classList.remove('is-disabled');
+      btnStartSession.removeAttribute('aria-disabled');
+    }
+
     try {
-      const stream = await camera.startCamera();
+      const stream = await camera.startCamera({ deviceId: camera.currentDeviceId });
       if (state.mode === 'room') {
         room.updateLocalStream(stream);
+        room.broadcastCameraState(true);
       }
+      return stream;
     } catch (err) {
-      console.warn('Webcam stream unavailable. Using gallery/demo photos.', err);
+      console.warn('Could not start camera:', err);
+      showToast('Camera unavailable • Check device permissions');
+      return null;
     }
   }
+
+  function disableCamera(isManual = false) {
+    if (isManual) {
+      state.cameraManuallyTurnedOff = true;
+    }
+    state.isCameraActive = false;
+
+    // Completely stop all active hardware video tracks and clear srcObject
+    camera.stopCamera();
+
+    if (cameraOffPlaceholder) cameraOffPlaceholder.classList.remove('is-hidden');
+    if (localVideoBox) localVideoBox.classList.add('is-hidden');
+    if (btnToggleCamPower) {
+      btnToggleCamPower.classList.remove('is-active-toggle');
+      btnToggleCamPower.title = 'Turn Camera On';
+    }
+    if (camPowerLabel) camPowerLabel.textContent = 'Cam Off';
+    if (btnStartSession) {
+      btnStartSession.classList.add('is-disabled');
+      btnStartSession.setAttribute('aria-disabled', 'true');
+    }
+
+    if (state.mode === 'room' && room.isConnected) {
+      room.broadcastCameraState(false);
+    }
+  }
+
+  // Camera Initialization helper
+  async function initWebcam() {
+    return enableCamera(false);
+  }
+
+  // Manual Camera Power Toggle Button
+  if (btnToggleCamPower) {
+    btnToggleCamPower.addEventListener('click', () => {
+      if (state.isCameraActive) {
+        disableCamera(true);
+        showToast('Camera turned off • Hardware indicator released');
+      } else {
+        enableCamera(true);
+        showToast('Camera turned on!');
+      }
+    });
+  }
+
+  // Wake Button on Placeholder Card
+  if (btnTurnCamOn) {
+    btnTurnCamOn.addEventListener('click', () => {
+      enableCamera(true);
+      showToast('Camera turned on!');
+    });
+  }
+
+  // Browser Tab Minimization & Mobile App Switching Visibility Listener
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      // Minimize/background: release camera hardware stream immediately
+      if (camera.isStreaming) {
+        camera.stopCamera();
+        if (state.mode === 'room' && room.isConnected) {
+          room.broadcastCameraState(false);
+        }
+      }
+    } else {
+      // Return: resume only if currently in Shoot phase and not manually turned off
+      const isShootActive = tabPhaseShoot && tabPhaseShoot.classList.contains('is-active') && !welcomeModal.classList.contains('is-dismissed') === false;
+      if (isShootActive && !state.cameraManuallyTurnedOff) {
+        enableCamera(false);
+      }
+    }
+  });
 
   btnToggleTimer.addEventListener('click', () => {
     state.timerDuration = state.timerDuration === 3 ? 5 : 3;
@@ -610,6 +742,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const uploadInput = tile.querySelector('.slot-file-input');
 
     retakeBtn.addEventListener('click', async () => {
+      if (!state.isCameraActive) {
+        showToast("Camera is resting • Turn camera on to retake this shot!");
+        if (btnTurnCamOn) btnTurnCamOn.focus();
+        return;
+      }
       state.activeSlotIndex = index;
       highlightActiveSlotTile();
       await captureSingleSlot(index);
@@ -713,6 +850,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   btnStartSession.addEventListener('click', () => {
+    if (!state.isCameraActive) {
+      showToast("Camera is resting • Turn camera on or use Upload below!");
+      if (btnTurnCamOn) btnTurnCamOn.focus();
+      return;
+    }
     if (state.mode === 'room' && room.isConnected) {
       room.broadcastCountdown(state.timerDuration);
     }

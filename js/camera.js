@@ -84,10 +84,27 @@ class PhotoboothCamera {
     }
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: videoConstraints,
-        audio: false
-      });
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: videoConstraints,
+          audio: false
+        });
+      } catch (deviceErr) {
+        if (this.currentDeviceId) {
+          console.warn('Exact deviceId request failed, falling back to default camera:', deviceErr);
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              width: { ideal: 1920, min: 640 },
+              height: { ideal: 1080, min: 480 },
+              facingMode: { ideal: this.currentFacingMode }
+            },
+            audio: false
+          });
+        } else {
+          throw deviceErr;
+        }
+      }
 
       this.stream = stream;
       this.video.srcObject = stream;
@@ -128,8 +145,20 @@ class PhotoboothCamera {
 
   stopCamera() {
     if (this.stream) {
-      this.stream.getTracks().forEach(track => track.stop());
+      this.stream.getVideoTracks().forEach(track => {
+        try {
+          track.stop();
+        } catch (e) {}
+      });
+      this.stream.getTracks().forEach(track => {
+        try {
+          track.stop();
+        } catch (e) {}
+      });
       this.stream = null;
+    }
+    if (this.video) {
+      this.video.srcObject = null;
     }
     this.isStreaming = false;
   }
