@@ -166,13 +166,10 @@ node test_qa_passes.js
 
 To use mobile devices or share the room link across the internet, the application must be served over **HTTPS** so browsers grant camera permissions:
 
-1. **GitHub Pages (Active):**
+**GitHub Pages (Active):**
    - Head to **Settings &gt; Pages** on GitHub.
    - Set Source to `Deploy from a branch` and select `main / (root)`.
    - Your site is live at **[https://mohargorai.github.io/couples-photobooth/](https://mohargorai.github.io/couples-photobooth/)**.
-2. **Vercel / Netlify:**
-   - Import the repository and select Static Site preset with root directory `.`.
-   - Deploy with automatic HTTPS enabled.
 
 <p align="center">
   ୨୧ ─────────────────────────────────────────────────────────── ୨୧
