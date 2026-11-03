@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Mohar &amp; Gungun's Photobooth • Soft Coquette Studio</title>
+  <meta name="description" content="A romantic, handcrafted virtual couples photobooth made by Mohar for Gungun.">
+  
+  <!-- Romantic Google Fonts: Sacramento, Caveat, Indie Flower, Nunito -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Indie+Flower&family=Nunito:wght@400;600;700;800&family=Sacramento&display=swap" rel="stylesheet">
+
+  <!-- PeerJS for Zero-Backend WebRTC Live Multiplayer Room -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Screen Flash Effect for Shutter -->
+  <div id="camera-flash" class="camera-flash" aria-hidden="true"></div>
+
+  <!-- Ribbon Toast Notification -->
+  <div id="ribbon-toast" class="ribbon-toast is-hidden" role="alert">
+    <div class="toast-content">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#D85A67" stroke-width="2" stroke-linecap="round"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+      <span id="toast-message">Invite link copied! Send this to her</span>
+    </div>
+  </div>
+
+  <!-- App Wrapper -->
+  <div class="app-container" id="app-container">
+
+    <!-- Header Navigation -->
+    <header class="app-header">
+      <div class="header-left">
+        <button id="btn-back-welcome" class="icon-btn-text" title="Return to Welcome Letter">
+          <svg viewBox="0 0 24 24" class="svg-icon" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          <span>Letter</span>
+        </button>
+      </div>
+
+      <div class="header-brand">
+        <div class="brand-sub">
+          <span>made by mohar &lt;3 for gungun &lt;3</span>
+        </div>
+        <h1 class="brand-title">Couples Photobooth</h1>
+      </div>
+
+      <div class="header-right">
+        <button id="btn-sound-toggle" class="icon-btn" title="Toggle Sound">
+          <svg id="svg-sound-on" viewBox="0 0 24 24" class="svg-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+          <svg id="svg-sound-off" viewBox="0 0 24 24" class="svg-icon is-hidden" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace Layout -->
+    <main class="studio-layout">
+      
+      <!-- LEFT COLUMN: Workflow Tabs (1. Pose & Shoot / 2. Decorate & Style) -->
+      <section class="booth-controls-pane">
+        
+        <!-- Workflow Phase Switcher Tabs -->
+        <div class="workflow-tabs">
+          <button id="tab-phase-shoot" class="workflow-tab is-active" data-phase="shoot">
+            <svg viewBox="0 0 24 24" width="18" height="18" class="tab-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <span>1. Pose &amp; Shoot</span>
+          </button>
+          <button id="tab-phase-decorate" class="workflow-tab" data-phase="decorate">
+            <svg viewBox="0 0 24 24" width="18" height="18" class="tab-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            <span>2. Decorate Strip</span>
+          </button>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- PHASE 1: CAMERA & SHOOTING PANEL                             -->
+        <!-- ============================================================ -->
+        <div id="panel-shoot" class="workflow-panel">
+          
+          <!-- Mode Switcher Pills -->
+          <div class="mode-pill-bar">
+            <button id="tab-solo" class="mode-pill is-active" data-mode="solo">
+              <span>Solo 4-Cut</span>
+            </button>
+            <button id="tab-together" class="mode-pill" data-mode="together">
+              <span>Duo Upload</span>
+            </button>
+            <button id="tab-room" class="mode-pill highlight-pill" data-mode="room">
+              <span>Together Room</span>
+            </button>
+          </div>
+
+          <!-- Together Room Inline Status Bar (Only active when in Room mode) -->
+          <div id="room-controls-bar" class="room-ribbon is-hidden">
+            <div class="room-ribbon-left">
+              <span class="status-pulse" id="room-pulse-dot"></span>
+              <span id="room-status-text">Room offline</span>
+              <span class="room-code-tag is-hidden" id="room-id-badge">Room: <b id="room-code-display">---</b></span>
+            </div>
+            <div class="room-ribbon-actions">
+              <button id="btn-create-room" class="btn-ribbon-action">Create Room</button>
+              <button id="btn-copy-invite" class="btn-ribbon-action is-hidden">Copy Invite</button>
+              <button id="btn-leave-room" class="btn-ribbon-action text-danger is-hidden">Leave</button>
+            </div>
+          </div>
+
+          <!-- Camera Viewfinder Card with Compact Integrated Hardware Controls -->
+          <div class="viewfinder-wrapper">
+            
+            <!-- Compact Camera Header -->
+            <div class="camera-compact-header">
+              <div class="camera-select-pill">
+                <select id="camera-select" class="select-camera-inline">
+                  <option value="">Integrated Camera</option>
+                </select>
+              </div>
+
+              <div class="camera-quick-tools">
+                <button id="btn-mirror-h" class="mini-tool-btn is-active-toggle" title="Horizontal Mirror">Mirror X</button>
+                <button id="btn-flip-v" class="mini-tool-btn" title="Vertical Flip">Flip Y</button>
+                <button id="btn-rotate-step" class="mini-tool-btn" title="Rotate 90 degrees"><span id="rotate-angle-label">0&deg;</span></button>
+                <button id="btn-toggle-adv-cam" class="mini-tool-btn" title="Toggle Zoom &amp; Framing Tools">Zoom &amp; Fit ▾</button>
+              </div>
+            </div>
+
+            <!-- Collapsible Zoom & Fit Tray -->
+            <div id="adv-cam-tray" class="adv-cam-tray is-hidden">
+              <div class="zoom-slider-wrap">
+                <span class="sub-label">Zoom:</span>
+                <button id="btn-zoom-wide" class="zoom-preset-btn">0.75x Wide</button>
+                <input type="range" id="camera-zoom-range" min="0.5" max="1.4" step="0.05" value="1.0" class="zoom-range-input">
+                <button id="btn-zoom-reset" class="zoom-preset-btn">1.0x</button>
+                <span id="zoom-value-label" class="zoom-val-tag">1.0x</span>
+              </div>
+              <button id="btn-toggle-fit" class="mini-tool-btn" title="Toggle Full Sensor Fit">
+                <span id="fit-mode-label">Fit Full</span>
+              </button>
+            </div>
+
+            <!-- Viewfinder Frame -->
+            <div class="viewfinder-frame" id="viewfinder-frame">
+              <div class="video-container local-video-container" id="local-video-box">
+                <video id="webcam" playsinline autoplay muted></video>
+                <span class="video-badge" id="badge-local">You</span>
+              </div>
+
+              <div class="video-container remote-video-container is-hidden" id="remote-video-box">
+                <video id="remote-webcam" playsinline autoplay muted></video>
+                <span class="video-badge" id="badge-remote">Partner</span>
+              </div>
+              
+              <div id="countdown-display" class="countdown-overlay is-hidden">3</div>
+              
+              <div id="together-guide-overlay" class="together-guide is-hidden">
+                <div class="guide-half guide-me"><span class="guide-tag">You</span></div>
+                <div class="guide-divider"></div>
+                <div class="guide-half guide-partner"><span class="guide-tag">Partner</span></div>
+              </div>
+
+              <div class="corner-accent top-left"></div>
+              <div class="corner-accent top-right"></div>
+              <div class="corner-accent bottom-left"></div>
+              <div class="corner-accent bottom-right"></div>
+            </div>
+
+            <!-- Quick Viewfinder Bar: Timer, Upload, Sample -->
+            <div class="viewfinder-quick-bar">
+              <button id="btn-toggle-timer" class="quick-bar-btn" title="Timer (3s / 5s)">
+                <svg viewBox="0 0 24 24" class="svg-icon-sm" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+                <span id="timer-label">3s Timer</span>
+              </button>
+
+              <label class="quick-bar-btn file-upload-btn" title="Upload from Device">
+                <input type="file" id="input-gallery-upload" accept="image/*" class="sr-only">
+                <svg viewBox="0 0 24 24" class="svg-icon-sm" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <span>Upload</span>
+              </label>
+
+              <button id="btn-load-demo" class="quick-bar-btn" title="Load Sample Poses">
+                <svg viewBox="0 0 24 24" class="svg-icon-sm" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                <span>Sample Poses</span>
+              </button>
+            </div>
+
+            <!-- Big Main Shutter Action Directly Below Viewfinder -->
+            <div class="capture-actions">
+              <button id="btn-start-session" class="btn-primary shutter-big-btn">
+                <div class="shutter-inner">
+                  <svg viewBox="0 0 28 28" class="btn-shutter-svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 8h3l2-3h10l2 3h3a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2z"/>
+                    <path d="M14 13.5 C 12.5 12, 10.5 13, 10.5 14.5 C 10.5 16.5, 14 19, 14 19 C 14 19, 17.5 16.5, 17.5 14.5 C 17.5 13, 15.5 12, 14 13.5 Z" fill="#D85A67" stroke="#5A3E42" stroke-width="1.2"/>
+                  </svg>
+                  <span id="shutter-btn-text">Take 4 Sequential Shots</span>
+                </div>
+              </button>
+            </div>
+
+          </div>
+
+          <!-- 4 Slot Retake Tiles -->
+          <div class="slots-compact-bar">
+            <div class="slots-compact-grid">
+              <div class="compact-slot-tile slot-tile" data-slot="0">
+                <span class="compact-slot-label">Shot 1</span>
+                <div class="compact-tile-btns">
+                  <button class="slot-mini-btn btn-retake-slot">Retake</button>
+                  <label class="slot-mini-btn">
+                    <span>Photo</span>
+                    <input type="file" class="sr-only slot-file-input" accept="image/*">
+                  </label>
+                </div>
+              </div>
+
+              <div class="compact-slot-tile slot-tile" data-slot="1">
+                <span class="compact-slot-label">Shot 2</span>
+                <div class="compact-tile-btns">
+                  <button class="slot-mini-btn btn-retake-slot">Retake</button>
+                  <label class="slot-mini-btn">
+                    <span>Photo</span>
+                    <input type="file" class="sr-only slot-file-input" accept="image/*">
+                  </label>
+                </div>
+              </div>
+
+              <div class="compact-slot-tile slot-tile" data-slot="2">
+                <span class="compact-slot-label">Shot 3</span>
+                <div class="compact-tile-btns">
+                  <button class="slot-mini-btn btn-retake-slot">Retake</button>
+                  <label class="slot-mini-btn">
+                    <span>Photo</span>
+                    <input type="file" class="sr-only slot-file-input" accept="image/*">
+                  </label>
+                </div>
+              </div>
+
+              <div class="compact-slot-tile slot-tile" data-slot="3">
+                <span class="compact-slot-label">Shot 4</span>
+                <div class="compact-tile-btns">
+                  <button class="slot-mini-btn btn-retake-slot">Retake</button>
+                  <label class="slot-mini-btn">
+                    <span>Photo</span>
+                    <input type="file" class="sr-only slot-file-input" accept="image/*">
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Transition to Decorate Phase -->
+            <button id="btn-goto-decorate" class="btn-step-next">
+              <span>Ready! Proceed to Decorate Strip</span>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- PHASE 2: DECORATE & CUSTOMIZATION PANEL                      -->
+        <!-- ============================================================ -->
+        <div id="panel-decorate" class="workflow-panel is-hidden">
+          
+          <div class="studio-settings-card">
+            
+            <!-- 8 Border Frame Designs -->
+            <div class="setting-group">
+              <div class="section-label">8 Handcrafted Frame Designs</div>
+              <div class="frame-style-picker">
+                <button class="frame-choice is-selected" data-frame="classic">
+                  <div class="frame-thumb thumb-classic"></div>
+                  <span>Milky Cream</span>
+                </button>
+                <button class="frame-choice" data-frame="gingham">
+                  <div class="frame-thumb thumb-gingham"></div>
+                  <span>Pink Gingham</span>
+                </button>
+                <button class="frame-choice" data-frame="polkadot">
+                  <div class="frame-thumb thumb-polkadot"></div>
+                  <span>Berry Dots</span>
+                </button>
+                <button class="frame-choice" data-frame="lace">
+                  <div class="frame-thumb thumb-lace"></div>
+                  <span>Lace Scallop</span>
+                </button>
+                <button class="frame-choice" data-frame="ribbon">
+                  <div class="frame-thumb thumb-ribbon"></div>
+                  <span>Ribbon Weave</span>
+                </button>
+                <button class="frame-choice" data-frame="airmail">
+                  <div class="frame-thumb thumb-airmail"></div>
+                  <span>Air-Mail</span>
+                </button>
+                <button class="frame-choice" data-frame="watercolor">
+                  <div class="frame-thumb thumb-watercolor"></div>
+                  <span>Blush Wash</span>
+                </button>
+                <button class="frame-choice" data-frame="film">
+                  <div class="frame-thumb thumb-film"></div>
+                  <span>Cocoa Film</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Romantic Caption Presets & Inputs -->
+            <div class="setting-group">
+              <div class="section-label">Romantic Handwritten Note</div>
+              
+              <div class="caption-presets-tray">
+                <button class="caption-pill" data-text="mohar &amp; gungun forever">mohar &amp; gungun forever</button>
+                <button class="caption-pill" data-text="missing you a little extra today">missing you a little extra today</button>
+                <button class="caption-pill" data-text="together from afar">together from afar</button>
+                <button class="caption-pill" data-text="my favorite person">my favorite person</button>
+                <button class="caption-pill" data-text="counting down the days until I see you">counting down the days until I see you</button>
+                <button class="caption-pill" data-text="always yours">always yours</button>
+                <button class="caption-pill" data-text="our little photobooth date">our little photobooth date</button>
+              </div>
+
+              <div class="caption-inputs">
+                <input type="text" id="strip-caption-input" class="text-input romantic-input" maxlength="42" value="mohar &amp; gungun forever" placeholder="Write your love note here...">
+                <input type="text" id="strip-date-input" class="text-input date-input" maxlength="26" value="" placeholder="Date stamp">
+              </div>
+
+              <div class="typography-controls-row">
+                <div class="type-control-col">
+                  <span class="sub-label">Script Font:</span>
+                  <div class="font-switch-btns">
+                    <button class="font-choice is-selected" data-font="Caveat">Caveat</button>
+                    <button class="font-choice" data-font="Sacramento">Sacramento</button>
+                    <button class="font-choice" data-font="Indie Flower">Indie Flower</button>
+                  </div>
+                </div>
+
+                <div class="type-control-col">
+                  <span class="sub-label">Ink Tone:</span>
+                  <div class="ink-switch-btns">
+                    <button class="ink-choice is-selected" data-ink="#5A3E42" title="Warm Cocoa" style="background:#5A3E42;"></button>
+                    <button class="ink-choice" data-ink="#D85A67" title="Soft Berry Red" style="background:#D85A67;"></button>
+                    <button class="ink-choice" data-ink="#C47A87" title="Dusty Rose" style="background:#C47A87;"></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 16 Stickers & One-Tap Layout Presets -->
+            <div class="setting-group">
+              <div class="sticker-tray-header">
+                <span class="section-label">Sticker Studio &amp; Presets</span>
+                <button id="btn-clear-stickers" class="text-link-btn">Clear All</button>
+              </div>
+
+              <div class="sticker-presets-row">
+                <button class="preset-pill-btn" data-preset="bow-overload">Bow Overload</button>
+                <button class="preset-pill-btn" data-preset="love-letter">Love Letter Set</button>
+                <button class="preset-pill-btn" data-preset="soft-minimal">Soft &amp; Minimal</button>
+                <button class="preset-pill-btn" data-preset="clear">Clear</button>
+              </div>
+
+              <div class="sticker-tray" id="sticker-tray"></div>
+              <div class="sticker-hint">Tap any sticker to place. Drag, rotate or scale on the strip!</div>
+            </div>
+
+          </div>
+
+          <!-- Bottom Action Bar on Decorate Panel -->
+          <div class="decorate-nav-bar">
+            <button id="btn-goto-shoot" class="btn-step-back">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              <span>Back to Posing</span>
+            </button>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- RIGHT COLUMN: Centered Interactive Photobooth Strip -->
+      <section class="booth-preview-pane">
+        
+        <div class="strip-stage-container">
+          <!-- Virtual Dispenser Top Lip -->
+          <div class="dispenser-lip">
+            <div class="dispenser-slit"></div>
+            <div class="dispenser-shadow"></div>
+          </div>
+
+          <!-- Live Interactive Strip on Screen -->
+          <div id="photobooth-strip" class="photobooth-strip frame-classic">
+            
+            <div class="strip-slots-container">
+              <div class="strip-photo-slot" data-slot="0">
+                <div class="slot-content-wrapper mode-solo-view">
+                  <img class="photo-img user-photo" alt="Photo 1" src="">
+                  <div class="duo-partner-view is-hidden">
+                    <img class="photo-img partner-photo" alt="Partner 1" src="">
+                  </div>
+                </div>
+                <div class="slot-watermark">01</div>
+              </div>
+
+              <div class="strip-photo-slot" data-slot="1">
+                <div class="slot-content-wrapper mode-solo-view">
+                  <img class="photo-img user-photo" alt="Photo 2" src="">
+                  <div class="duo-partner-view is-hidden">
+                    <img class="photo-img partner-photo" alt="Partner 2" src="">
+                  </div>
+                </div>
+                <div class="slot-watermark">02</div>
+              </div>
+
+              <div class="strip-photo-slot" data-slot="2">
+                <div class="slot-content-wrapper mode-solo-view">
+                  <img class="photo-img user-photo" alt="Photo 3" src="">
+                  <div class="duo-partner-view is-hidden">
+                    <img class="photo-img partner-photo" alt="Partner 3" src="">
+                  </div>
+                </div>
+                <div class="slot-watermark">03</div>
+              </div>
+
+              <div class="strip-photo-slot" data-slot="3">
+                <div class="slot-content-wrapper mode-solo-view">
+                  <img class="photo-img user-photo" alt="Photo 4" src="">
+                  <div class="duo-partner-view is-hidden">
+                    <img class="photo-img partner-photo" alt="Partner 4" src="">
+                  </div>
+                </div>
+                <div class="slot-watermark">04</div>
+              </div>
+            </div>
+
+            <!-- Strip Handwritten Footer Area -->
+            <footer class="strip-footer">
+              <div class="strip-divider-svg">
+                <svg viewBox="0 0 200 20" width="100%" height="20" fill="none" stroke="#5A3E42" stroke-width="1.8" stroke-linecap="round">
+                  <path d="M 20 10 Q 60 4, 90 10 T 180 10"/>
+                  <circle cx="100" cy="10" r="3" fill="#D85A67"/>
+                  <path d="M 97 10 C 93 6, 88 7, 88 10 C 88 13, 93 14, 97 10" fill="#FFCCD7"/>
+                  <path d="M 103 10 C 107 6, 112 7, 112 10 C 112 13, 107 14, 103 10" fill="#FFCCD7"/>
+                </svg>
+              </div>
+              <div id="strip-footer-caption" class="strip-footer-caption">mohar &amp; gungun forever</div>
+              <div id="strip-footer-date" class="strip-footer-date">• Nov 2, 2026 •</div>
+              <div class="strip-studio-tag">made by mohar &bull; for gungun with love</div>
+            </footer>
+
+            <!-- Placed Stickers Overlay Layer -->
+            <div id="stickers-layer" class="stickers-layer"></div>
+          </div>
+        </div>
+
+        <!-- Print & Dispense Action Button -->
+        <div class="dispense-cta-bar">
+          <button id="btn-print-strip" class="btn-print-strip">
+            <svg viewBox="0 0 24 24" class="svg-print-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M6 9V2h12v7"/>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+              <rect x="6" y="14" width="12" height="8" rx="1"/>
+            </svg>
+            <span>Print Photobooth Strip</span>
+          </button>
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- WELCOME SCREEN: Handcrafted Love-Letter Card -->
+  <div id="welcome-modal" class="welcome-overlay">
+    <div class="envelope-card-container">
+      
+      <div class="welcome-card" id="welcome-card">
+        
+        <div class="card-curtains-header">
+          <svg viewBox="0 0 320 80" class="curtain-svg" preserveAspectRatio="none">
+            <path d="M 0 0 L 320 0 L 320 40 Q 280 60, 240 40 Q 200 60, 160 40 Q 120 60, 80 40 Q 40 60, 0 40 Z" fill="#FFEBF0" stroke="#5A3E42" stroke-width="2"/>
+            <path d="M 0 0 L 320 0 L 320 28 Q 280 46, 240 28 Q 200 46, 160 28 Q 120 46, 80 28 Q 40 46, 0 28 Z" fill="#FFD1DC" opacity="0.6"/>
+            <circle cx="40" cy="48" r="4" fill="#D85A67"/>
+            <circle cx="120" cy="48" r="4" fill="#D85A67"/>
+            <circle cx="200" cy="48" r="4" fill="#D85A67"/>
+            <circle cx="280" cy="48" r="4" fill="#D85A67"/>
+          </svg>
+        </div>
+
+        <div class="card-body">
+          <div class="card-pretitle">a private space for two</div>
+          <h2 class="card-title">Couples Photobooth</h2>
+          
+          <p class="card-message">
+            A cozy little photobooth made for two. Take four sweet memories together, anywhere in the world—whether sitting side-by-side or miles apart.
+          </p>
+
+          <div class="welcome-ribbon-stage" id="welcome-ribbon-btn" title="Tap to open the booth">
+            <svg viewBox="0 0 160 120" class="welcome-bow-svg">
+              <g id="welcome-bow-group">
+                <path class="bow-wing left" d="M 80 55 C 50 20, 15 20, 10 45 C 5 70, 45 75, 80 60" fill="#FFCCD7" stroke="#5A3E42" stroke-width="2.5" stroke-linejoin="round"/>
+                <path class="bow-wing right" d="M 80 55 C 110 20, 145 20, 150 45 C 155 70, 115 75, 80 60" fill="#FFCCD7" stroke="#5A3E42" stroke-width="2.5" stroke-linejoin="round"/>
+                <path class="bow-tail left" d="M 75 60 C 60 75, 35 95, 20 110 C 35 106, 50 108, 60 112 C 70 95, 78 78, 80 68" fill="#F8BBD0" stroke="#5A3E42" stroke-width="2.2" stroke-linejoin="round"/>
+                <path class="bow-tail right" d="M 85 60 C 100 75, 125 95, 140 110 C 125 106, 110 108, 100 112 C 90 95, 82 78, 80 68" fill="#F8BBD0" stroke="#5A3E42" stroke-width="2.2" stroke-linejoin="round"/>
+                <ellipse cx="80" cy="58" rx="9" ry="11" fill="#E57373" stroke="#5A3E42" stroke-width="2.5"/>
+                <circle cx="80" cy="58" r="3" fill="#FFF0F3"/>
+              </g>
+            </svg>
+            <div class="ribbon-prompt">Tap the ribbon to step inside</div>
+          </div>
+
+          <div class="welcome-mode-select">
+            <button class="welcome-start-btn" id="btn-start-classic">
+              <span class="btn-sub">Solo / In-Person</span>
+              <span class="btn-main">Classic 4-Cut Strip</span>
+            </button>
+            <button class="welcome-start-btn" id="btn-start-together">
+              <span class="btn-sub">Duo Gallery / Upload</span>
+              <span class="btn-main">Couples Split Mode</span>
+            </button>
+            <button class="welcome-start-btn highlight" id="btn-start-room">
+              <span class="btn-sub">Live Shareable Link Co-Op</span>
+              <span class="btn-main">Live Together Room</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="card-footer-stamp">
+          <svg viewBox="0 0 240 30" width="240" height="30">
+            <text x="120" y="20" font-family="Caveat, cursive" font-size="16" fill="#8A686D" text-anchor="middle">made by mohar &lt;3 for gungun &lt;3</text>
+          </svg>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- POSE INSPIRATION & SAMPLE CUTS MODAL -->
+  <div id="poses-modal" class="modal-backdrop is-hidden">
+    <div class="poses-modal-dialog">
+      <div class="poses-modal-header">
+        <div class="poses-title-group">
+          <span class="poses-subhead">cute photobooth guide</span>
+          <h3 class="poses-modal-title">Sample Pose Ideas</h3>
+        </div>
+        <button id="btn-close-poses" class="modal-close-btn" title="Close dialog" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="poses-modal-body">
+        <div class="poses-grid">
+          <!-- Cut 1: Cheek Heart -->
+          <div class="pose-guide-card">
+            <div class="pose-card-badge">Cut 1</div>
+            <div class="pose-card-illus">
+              <svg viewBox="0 0 80 80" width="60" height="60" fill="none" stroke="#5A3E42" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="40" cy="40" r="32" fill="#FFEBF0" stroke="none"/>
+                <ellipse cx="40" cy="42" rx="22" ry="24" stroke-width="2" fill="#FFF9FB"/>
+                <path d="M30 38 Q34 34 38 38" stroke-width="2"/>
+                <path d="M46 38 Q50 34 54 38" stroke-width="2"/>
+                <ellipse cx="28" cy="44" rx="4" ry="2.5" fill="#FFB6C1" stroke="none"/>
+                <ellipse cx="52" cy="44" rx="4" ry="2.5" fill="#FFB6C1" stroke="none"/>
+                <path d="M38 46 Q40 50 44 46" stroke-width="2"/>
+                <path d="M53 43 C54 36 61 36 63 42 C64 47 57 53 53 56 C51 53 47 48 50 44" stroke="#D85A67" stroke-width="2.2" fill="#FFD1DC"/>
+                <path d="M59 38 Q61 35 63 38" stroke="#D85A67" stroke-width="1.8"/>
+              </svg>
+            </div>
+            <h4 class="pose-name">Cheek Heart</h4>
+            <p class="pose-tip">Curve your hand on your cheek into a sweet half heart.</p>
+          </div>
+
+          <!-- Cut 2: Wink & Peace -->
+          <div class="pose-guide-card">
+            <div class="pose-card-badge">Cut 2</div>
+            <div class="pose-card-illus">
+              <svg viewBox="0 0 80 80" width="60" height="60" fill="none" stroke="#5A3E42" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="40" cy="40" r="32" fill="#FFF2F5" stroke="none"/>
+                <ellipse cx="38" cy="42" rx="22" ry="24" stroke-width="2" fill="#FFF9FB"/>
+                <path d="M28 38 L36 38" stroke-width="2.2"/>
+                <circle cx="48" cy="38" r="2.5" fill="#5A3E42"/>
+                <ellipse cx="28" cy="44" rx="4" ry="2.5" fill="#FFB6C1" stroke="none"/>
+                <ellipse cx="50" cy="44" rx="4" ry="2.5" fill="#FFB6C1" stroke="none"/>
+                <path d="M37 46 Q40 51 45 46" stroke-width="2"/>
+                <path d="M55 52 L57 32 M62 34 L59 52" stroke="#D85A67" stroke-width="2.4"/>
+                <circle cx="58" cy="48" r="5" fill="#FFD1DC" stroke="#D85A67" stroke-width="2"/>
+              </svg>
+            </div>
+            <h4 class="pose-name">Wink &amp; Peace</h4>
+            <p class="pose-tip">Flash a playful peace sign with your sweetest wink.</p>
+          </div>
+
+          <!-- Cut 3: Flower Blossom -->
+          <div class="pose-guide-card">
+            <div class="pose-card-badge">Cut 3</div>
+            <div class="pose-card-illus">
+              <svg viewBox="0 0 80 80" width="60" height="60" fill="none" stroke="#5A3E42" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="40" cy="40" r="32" fill="#FFF0F5" stroke="none"/>
+                <ellipse cx="40" cy="36" rx="20" ry="22" stroke-width="2" fill="#FFF9FB"/>
+                <path d="M30 33 Q34 29 38 33" stroke-width="2"/>
+                <path d="M42 33 Q46 29 50 33" stroke-width="2"/>
+                <ellipse cx="29" cy="39" rx="3.5" ry="2" fill="#FFB6C1" stroke="none"/>
+                <ellipse cx="49" cy="39" rx="3.5" ry="2" fill="#FFB6C1" stroke="none"/>
+                <path d="M38 42 Q40 46 44 42" stroke-width="2"/>
+                <path d="M22 48 C20 40 28 36 32 44 C34 48 38 56 40 56 C42 56 46 48 48 44 C52 36 60 40 58 48 C56 56 44 64 40 64 C36 64 24 56 22 48 Z" stroke="#D85A67" stroke-width="2" fill="#FFD1DC"/>
+              </svg>
+            </div>
+            <h4 class="pose-name">Flower Blossom</h4>
+            <p class="pose-tip">Cup your chin with both hands like a blooming flower.</p>
+          </div>
+
+          <!-- Cut 4: Cozy Lean -->
+          <div class="pose-guide-card">
+            <div class="pose-card-badge">Cut 4</div>
+            <div class="pose-card-illus">
+              <svg viewBox="0 0 80 80" width="60" height="60" fill="none" stroke="#5A3E42" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="40" cy="40" r="32" fill="#FFEBF0" stroke="none"/>
+                <ellipse cx="30" cy="40" rx="15" ry="17" stroke-width="2" fill="#FFF9FB"/>
+                <ellipse cx="50" cy="39" rx="15" ry="17" stroke-width="2" fill="#FFF9FB"/>
+                <path d="M24 38 Q28 35 31 38" stroke-width="1.8"/>
+                <path d="M46 37 Q49 34 53 37" stroke-width="1.8"/>
+                <ellipse cx="23" cy="42" rx="2.5" ry="1.5" fill="#FFB6C1" stroke="none"/>
+                <ellipse cx="54" cy="41" rx="2.5" ry="1.5" fill="#FFB6C1" stroke="none"/>
+                <path d="M38 22 C37 18 40 16 42 19 C44 16 47 18 46 22 C45 25 42 27 42 27 C42 27 39 25 38 22 Z" fill="#D85A67"/>
+              </svg>
+            </div>
+            <h4 class="pose-name">Cozy Lean</h4>
+            <p class="pose-tip">Tilt your heads together with warm, cozy smiles.</p>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="poses-actions">
+          <button id="btn-apply-sample-photos" class="btn-primary poses-btn-primary">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            <span>Fill Strip with Sample Photos</span>
+          </button>
+          <button id="btn-dismiss-poses" class="btn-secondary poses-btn-secondary">
+            <span>I'm Ready to Pose!</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DISPENSING / FINAL EXPORT MODAL -->
+  <div id="export-modal" class="modal-backdrop is-hidden">
+    <div class="export-modal-dialog">
+      <div class="export-modal-header">
+        <h3 class="export-modal-title">Your Developed Strip</h3>
+        <button id="btn-close-export" class="modal-close-btn" title="Close dialog" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="export-modal-body">
+        <div class="export-strip-slot-frame">
+          <div class="export-slot-lip"></div>
+          <div id="export-preview-container" class="export-preview-container">
+            <canvas id="export-canvas" class="export-canvas"></canvas>
+          </div>
+        </div>
+
+        <div class="export-actions">
+          <button id="btn-download-png" class="btn-primary export-btn">
+            <svg viewBox="0 0 24 24" class="svg-icon" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Save to Camera Roll (High Res)</span>
+          </button>
+
+          <button id="btn-share-strip" class="btn-secondary export-btn">
+            <svg viewBox="0 0 24 24" class="svg-icon" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            <span>Share Strip</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/audio.js"></script>
+  <script src="js/camera.js"></script>
+  <script src="js/room.js"></script>
+  <script src="js/stickers.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
