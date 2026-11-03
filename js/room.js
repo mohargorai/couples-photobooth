@@ -11,7 +11,11 @@ class TogetherRoom {
     onCountdownSync,
     onCustomizationSync,
     onStatusChange,
-    onRemoteCameraState
+    onRemoteCameraState,
+    onStatusUpdate,
+    onStatusRequest,
+    onStripStateSync,
+    onPeerLeft
   }) {
     this.peer = null;
     this.conn = null;
@@ -30,6 +34,10 @@ class TogetherRoom {
     this.onCustomizationSync = onCustomizationSync || (() => {});
     this.onStatusChange = onStatusChange || (() => {});
     this.onRemoteCameraState = onRemoteCameraState || (() => {});
+    this.onStatusUpdate = onStatusUpdate || (() => {});
+    this.onStatusRequest = onStatusRequest || (() => {});
+    this.onStripStateSync = onStripStateSync || (() => {});
+    this.onPeerLeft = onPeerLeft || (() => {});
   }
 
   /**
@@ -43,7 +51,7 @@ class TogetherRoom {
   }
 
   /**
-   * Initialize PeerJS client
+   * Initialize PeerJS client cleanly
    */
   initPeer(peerId = null) {
     return new Promise((resolve, reject) => {
@@ -54,11 +62,13 @@ class TogetherRoom {
       }
 
       try {
+        // Destroy existing peer instance if open
         if (this.peer && !this.peer.destroyed) {
-          this.peer.destroy();
+          try { this.peer.destroy(); } catch (e) {}
+          this.peer = null;
         }
 
-        // Configure PeerJS with default public cloud broker
+        // Configure fresh PeerJS with default public cloud broker
         this.peer = peerId ? new window.Peer(peerId) : new window.Peer();
 
         this.peer.on('open', (id) => {
@@ -79,6 +89,9 @@ class TogetherRoom {
           });
           call.on('close', () => {
             this.handleRemoteLeave();
+          });
+          call.on('error', (err) => {
+            console.warn('Call error:', err);
           });
         });
 
@@ -117,7 +130,7 @@ class TogetherRoom {
     // Update browser URL query string without reloading
     const url = new URL(window.location.href);
     url.searchParams.set('room', this.roomId);
-    window.history.pushState({ room: this.roomId }, '', url.toString());
+    window.history.replaceState({ room: this.roomId }, '', url.toString());
 
     this.onStatusChange({
       state: 'waiting_for_partner',
@@ -167,23 +180,27 @@ class TogetherRoom {
       call.on('close', () => {
         this.handleRemoteLeave();
       });
+      call.on('error', (err) => {
+        console.warn('Call host error:', err);
+      });
     } catch (err) {
       console.warn('Call host error:', err);
     }
   }
 
   /**
-   * Set or update local media stream (e.g. after camera switch)
+   * Set or update local media stream (e.g. after camera restart / tab switch)
    */
   updateLocalStream(newStream) {
     this.localStream = newStream;
 
-    // If active call exists, replace track
+    // If active call exists, replace track in place
     if (this.call && this.call.peerConnection) {
       const senders = this.call.peerConnection.getSenders();
       const videoTrack = newStream ? newStream.getVideoTracks()[0] : null;
       if (videoTrack) {
-        const videoSender = senders.find(s => s.track && s.track.kind === 'video');
+        const videoSender = senders.find(s => s.track && s.track.kind === 'video') ||
+                            senders.find(s => !s.track || s.track.kind === 'video');
         if (videoSender) {
           videoSender.replaceTrack(videoTrack).catch(e => console.warn('Track replace error:', e));
         }
@@ -196,6 +213,9 @@ class TogetherRoom {
   }
 
   setupDataConnection(conn) {
+    if (this.conn && this.conn !== conn) {
+      try { this.conn.close(); } catch (e) {}
+    }
     this.conn = conn;
 
     conn.on('open', () => {
@@ -223,6 +243,11 @@ class TogetherRoom {
           console.warn('Host call back error:', e);
         }
       }
+
+      // If host, request status from partner and trigger sync
+      if (this.isHost && this.onStatusRequest) {
+        this.onStatusRequest();
+      }
     });
 
     conn.on('data', (data) => {
@@ -231,6 +256,7 @@ class TogetherRoom {
 
     conn.on('close', () => {
       this.handleRemoteLeave();
+      this.onPeerLeft();
     });
 
     conn.on('error', (err) => {
@@ -242,6 +268,24 @@ class TogetherRoom {
     if (!data || typeof data !== 'object') return;
 
     switch (data.type) {
+      case 'PEER_LEFT':
+      case 'DISCONNECT':
+        this.handleRemoteLeave();
+        this.onPeerLeft();
+        break;
+
+      case 'PEER_STATUS_UPDATE':
+        this.onStatusUpdate(data);
+        break;
+
+      case 'REQUEST_PEER_STATUS':
+        this.onStatusRequest();
+        break;
+
+      case 'SYNC_STRIP_STATE':
+        this.onStripStateSync(data);
+        break;
+
       case 'TRANSFORM_UPDATE':
         this.onRemoteTransform(data.transform);
         break;
@@ -258,10 +302,6 @@ class TogetherRoom {
         this.onRemoteCameraState(data.active);
         break;
 
-      case 'DISCONNECT':
-        this.handleRemoteLeave();
-        break;
-
       default:
         break;
     }
@@ -272,6 +312,34 @@ class TogetherRoom {
    */
   broadcastCameraState(active) {
     this.broadcast({ type: 'CAMERA_STATE', active: !!active });
+  }
+
+  /**
+   * Broadcast peer status update (currentTab and cameraEnabled)
+   */
+  broadcastPeerStatus({ currentTab, cameraEnabled }) {
+    this.broadcast({
+      type: 'PEER_STATUS_UPDATE',
+      currentTab: currentTab || 'shoot',
+      cameraEnabled: !!cameraEnabled
+    });
+  }
+
+  /**
+   * Request live status from peer
+   */
+  requestPeerStatus() {
+    this.broadcast({ type: 'REQUEST_PEER_STATUS' });
+  }
+
+  /**
+   * Broadcast full strip state for reconnect / live syncing
+   */
+  broadcastStripState(statePayload) {
+    this.broadcast({
+      type: 'SYNC_STRIP_STATE',
+      ...statePayload
+    });
   }
 
   /**
@@ -319,32 +387,42 @@ class TogetherRoom {
     });
   }
 
+  /**
+   * Full clean teardown on Leave
+   */
   leaveRoom() {
-    this.broadcast({ type: 'DISCONNECT' });
+    // 1. Notify partner before closing
+    try {
+      this.broadcast({ type: 'PEER_LEFT' });
+      this.broadcast({ type: 'DISCONNECT' });
+    } catch (e) {}
+
+    // 2. Close active media and data connections
     if (this.conn) {
-      try { this.conn.close(); } catch(e){}
+      try { this.conn.close(); } catch (e) {}
       this.conn = null;
     }
     if (this.call) {
-      try { this.call.close(); } catch(e){}
+      try { this.call.close(); } catch (e) {}
       this.call = null;
     }
+
+    // 3. Destroy PeerJS instance
     if (this.peer) {
-      try { this.peer.destroy(); } catch(e){}
+      try { this.peer.destroy(); } catch (e) {}
       this.peer = null;
     }
     this.isConnected = false;
     this.roomId = null;
     this.remoteStream = null;
 
-    // Clean up query param
+    // 4. Clean up query param using replaceState
     const url = new URL(window.location.href);
     url.searchParams.delete('room');
-    window.history.pushState({}, '', url.pathname);
+    window.history.replaceState({}, '', url.pathname);
 
     this.onStatusChange({ state: 'idle', message: 'Left room' });
   }
 }
 
 window.TogetherRoom = TogetherRoom;
-

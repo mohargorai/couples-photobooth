@@ -107,6 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Application State
   const state = {
     mode: 'solo', // 'solo', 'together', or 'room'
+    currentPhase: 'shoot', // 'shoot' or 'decorate'
     timerDuration: 3,
     activeSlotIndex: 0,
     isCapturingSession: false,
@@ -138,6 +139,125 @@ document.addEventListener('DOMContentLoaded', () => {
     }, duration);
   }
 
+  // Session Storage Persistence
+  const STRIP_STORAGE_KEY = 'couples_photobooth_strip_state';
+
+  function saveStripStateToSession() {
+    try {
+      const payload = {
+        userPhotos: state.userPhotos,
+        togetherPhotos: state.togetherPhotos,
+        frameStyle: state.frameStyle,
+        caption: captionInput ? captionInput.value : '',
+        date: dateInput ? dateInput.value : '',
+        fontFamily: state.fontFamily,
+        inkColor: state.inkColor,
+        stickers: stickers && stickers.stickers ? stickers.stickers.map(s => ({
+          catalogId: s.catalogId,
+          xPercent: s.xPercent,
+          yPercent: s.yPercent,
+          scale: s.scale,
+          rotation: s.rotation
+        })) : []
+      };
+      sessionStorage.setItem(STRIP_STORAGE_KEY, JSON.stringify(payload));
+    } catch (e) {
+      console.warn('SessionStorage save error:', e);
+    }
+  }
+
+  function restoreStripStateFromSession() {
+    try {
+      const raw = sessionStorage.getItem(STRIP_STORAGE_KEY);
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      let hasCustomPhotos = false;
+
+      if (Array.isArray(data.userPhotos)) {
+        data.userPhotos.forEach((p, idx) => {
+          if (p) {
+            state.userPhotos[idx] = p;
+            hasCustomPhotos = true;
+          }
+        });
+      }
+      if (Array.isArray(data.togetherPhotos)) {
+        data.togetherPhotos.forEach((p, idx) => {
+          if (p) {
+            state.togetherPhotos[idx] = p;
+            hasCustomPhotos = true;
+          }
+        });
+      }
+      if (data.frameStyle) {
+        state.frameStyle = data.frameStyle;
+        applyFrameStyle(data.frameStyle, false);
+      }
+      if (data.caption !== undefined && captionInput) {
+        captionInput.value = data.caption;
+        if (stripFooterCaption) stripFooterCaption.textContent = data.caption;
+      }
+      if (data.date !== undefined && dateInput) {
+        dateInput.value = data.date;
+        if (stripFooterDate) stripFooterDate.textContent = `  ${data.date}  `;
+      }
+      if (data.fontFamily) {
+        state.fontFamily = data.fontFamily;
+        applyFontFamily(data.fontFamily, false);
+      }
+      if (data.inkColor) {
+        state.inkColor = data.inkColor;
+        applyInkColor(data.inkColor, false);
+      }
+      if (Array.isArray(data.stickers) && stickers) {
+        stickers.clearAll();
+        data.stickers.forEach(s => {
+          stickers.addSticker(s.catalogId, {
+            xPercent: s.xPercent,
+            yPercent: s.yPercent,
+            scale: s.scale,
+            rotation: s.rotation
+          });
+        });
+        stickers.selectedSticker = null;
+        document.querySelectorAll('.sticker-element').forEach(el => el.classList.remove('is-selected'));
+      }
+      if (hasCustomPhotos) {
+        updateStripDOM();
+      }
+      return hasCustomPhotos;
+    } catch (e) {
+      console.warn('SessionStorage restore error:', e);
+      return false;
+    }
+  }
+
+  function syncStripToPartner() {
+    if (state.mode === 'room' && room.isConnected) {
+      room.broadcastStripState({
+        photos: state.userPhotos,
+        togetherPhotos: state.togetherPhotos,
+        frameStyle: state.frameStyle,
+        caption: captionInput ? captionInput.value : '',
+        date: dateInput ? dateInput.value : '',
+        fontFamily: state.fontFamily,
+        inkColor: state.inkColor,
+        stickers: stickers && stickers.stickers ? stickers.stickers.map(s => ({
+          catalogId: s.catalogId,
+          xPercent: s.xPercent,
+          yPercent: s.yPercent,
+          scale: s.scale,
+          rotation: s.rotation
+        })) : []
+      });
+    }
+  }
+
+  stickers.onStickersChange = () => {
+    saveStripStateToSession();
+    syncStripToPartner();
+  };
+
   // Real-Time WebRTC Together Room
   const room = new TogetherRoom({
     onRemoteStream: (stream) => {
@@ -161,7 +281,98 @@ document.addEventListener('DOMContentLoaded', () => {
 
     onRemoteDisconnected: () => {
       viewfinderFrameEl.classList.remove('is-duo-view');
+      if (remoteWebcamEl) remoteWebcamEl.srcObject = null;
       showToast('Partner disconnected.');
+    },
+
+    onPeerLeft: () => {
+      viewfinderFrameEl.classList.remove('is-duo-view');
+      if (remoteWebcamEl) remoteWebcamEl.srcObject = null;
+      if (partnerCameraOffCard) partnerCameraOffCard.classList.add('is-hidden');
+      roomPulseDot.className = 'status-pulse is-waiting';
+      roomStatusText.textContent = 'Waiting for partner to join...';
+      showToast('Partner left the room.');
+    },
+
+    onStatusUpdate: (data) => {
+      if (data.currentTab === 'decorate') {
+        if (partnerCameraOffCard) {
+          partnerCameraOffCard.classList.remove('is-hidden');
+          const textEl = partnerCameraOffCard.querySelector('.partner-off-text');
+          if (textEl) textEl.textContent = "Partner's camera is paused while decorating";
+        }
+      } else if (data.currentTab === 'shoot') {
+        if (data.cameraEnabled) {
+          if (partnerCameraOffCard) partnerCameraOffCard.classList.add('is-hidden');
+          if (remoteWebcamEl && remoteWebcamEl.paused) {
+            remoteWebcamEl.play().catch(() => {});
+          }
+        } else {
+          if (partnerCameraOffCard) {
+            partnerCameraOffCard.classList.remove('is-hidden');
+            const textEl = partnerCameraOffCard.querySelector('.partner-off-text');
+            if (textEl) textEl.textContent = "Partner turned camera off";
+          }
+        }
+      }
+    },
+
+    onStatusRequest: () => {
+      room.broadcastPeerStatus({
+        currentTab: state.currentPhase,
+        cameraEnabled: state.isCameraActive
+      });
+      if (room.isHost) {
+        syncStripToPartner();
+      }
+    },
+
+    onStripStateSync: (data) => {
+      if (Array.isArray(data.photos)) {
+        data.photos.forEach((p, idx) => {
+          if (p) state.userPhotos[idx] = p;
+        });
+      }
+      if (Array.isArray(data.togetherPhotos)) {
+        data.togetherPhotos.forEach((p, idx) => {
+          if (p) state.togetherPhotos[idx] = p;
+        });
+      }
+      if (data.frameStyle) {
+        state.frameStyle = data.frameStyle;
+        applyFrameStyle(data.frameStyle, false);
+      }
+      if (data.caption !== undefined && captionInput) {
+        captionInput.value = data.caption;
+        if (stripFooterCaption) stripFooterCaption.textContent = data.caption;
+      }
+      if (data.date !== undefined && dateInput) {
+        dateInput.value = data.date;
+        if (stripFooterDate) stripFooterDate.textContent = `  ${data.date}  `;
+      }
+      if (data.fontFamily) {
+        state.fontFamily = data.fontFamily;
+        applyFontFamily(data.fontFamily, false);
+      }
+      if (data.inkColor) {
+        state.inkColor = data.inkColor;
+        applyInkColor(data.inkColor, false);
+      }
+      if (Array.isArray(data.stickers) && stickers) {
+        stickers.clearAll();
+        data.stickers.forEach(s => {
+          stickers.addSticker(s.catalogId, {
+            xPercent: s.xPercent,
+            yPercent: s.yPercent,
+            scale: s.scale,
+            rotation: s.rotation
+          });
+        });
+        stickers.selectedSticker = null;
+        document.querySelectorAll('.sticker-element').forEach(el => el.classList.remove('is-selected'));
+      }
+      updateStripDOM();
+      saveStripStateToSession();
     },
 
     onCountdownSync: (duration) => {
@@ -185,6 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (data.preset) {
         stickers.applyPreset(data.preset);
       }
+      saveStripStateToSession();
     },
 
     onStatusChange: (status) => {
@@ -195,7 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateRoomUI(status) {
     if (status.state === 'waiting_for_partner') {
       roomPulseDot.className = 'status-pulse is-waiting';
-      roomStatusText.textContent = 'Waiting for her to join...';
+      roomStatusText.textContent = 'Waiting for partner to join...';
       roomIdBadge.classList.remove('is-hidden');
       roomCodeDisplay.textContent = status.roomId;
       btnCreateRoom.classList.add('is-hidden');
@@ -320,15 +532,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Phase Switching (1. Pose & Shoot vs 2. Decorate Strip)
   function setWorkflowPhase(phase) {
+    state.currentPhase = phase;
+    const studioLayout = document.querySelector('.studio-layout');
+    if (studioLayout) {
+      studioLayout.classList.toggle('is-phase-decorate', phase === 'decorate');
+      studioLayout.classList.toggle('is-phase-shoot', phase === 'shoot');
+    }
+
     if (phase === 'shoot') {
       tabPhaseShoot.classList.add('is-active');
       tabPhaseDecorate.classList.remove('is-active');
       panelShoot.classList.remove('is-hidden');
       panelDecorate.classList.add('is-hidden');
 
+      if (state.mode === 'room' && room.isConnected) {
+        if (camera.stream) {
+          camera.stream.getVideoTracks().forEach(t => t.enabled = true);
+        }
+      }
+
       // Seamlessly restart camera if not manually toggled off
       if (!state.cameraManuallyTurnedOff) {
-        enableCamera(false);
+        enableCamera(false).then((stream) => {
+          if (state.mode === 'room' && room.isConnected) {
+            if (stream) room.updateLocalStream(stream);
+            room.broadcastPeerStatus({ currentTab: 'shoot', cameraEnabled: state.isCameraActive });
+            room.requestPeerStatus();
+          }
+        });
+      } else if (state.mode === 'room' && room.isConnected) {
+        room.broadcastPeerStatus({ currentTab: 'shoot', cameraEnabled: false });
+        room.requestPeerStatus();
       }
     } else {
       tabPhaseShoot.classList.remove('is-active');
@@ -337,8 +571,17 @@ document.addEventListener('DOMContentLoaded', () => {
       panelDecorate.classList.remove('is-hidden');
       stickers.recalculateLayout();
 
-      // Automatically release camera hardware when leaving Pose & Shoot
-      disableCamera(false);
+      if (state.mode === 'room' && room.isConnected) {
+        // In Together Room, pause video tracks so WebRTC connection stays alive
+        if (camera.stream) {
+          camera.stream.getVideoTracks().forEach(t => t.enabled = false);
+        }
+        state.isCameraActive = false;
+        room.broadcastPeerStatus({ currentTab: 'decorate', cameraEnabled: false });
+      } else {
+        // Automatically release camera hardware when leaving Pose & Shoot
+        disableCamera(false);
+      }
     }
   }
 
@@ -361,13 +604,16 @@ document.addEventListener('DOMContentLoaded', () => {
   dateInput.value = defaultDateStr;
   stripFooterDate.textContent = `• ${defaultDateStr} •`;
 
-  // Prepopulate Demo Posers
+  // Prepopulate Demo Posers or restore from session
   function loadDemoPoses() {
     for (let i = 0; i < 4; i++) {
       state.userPhotos[i] = PhotoboothCamera.generatePlaceholder(i, `Pose ${i + 1}`, false);
       state.togetherPhotos[i] = PhotoboothCamera.generatePlaceholder(i, `Partner Pose ${i + 1}`, true);
     }
-    updateStripDOM();
+    const restored = restoreStripStateFromSession();
+    if (!restored) {
+      updateStripDOM();
+    }
   }
   loadDemoPoses();
 
@@ -593,12 +839,14 @@ document.addEventListener('DOMContentLoaded', () => {
         state.togetherPhotos[i] = PhotoboothCamera.generateSamplePhoto(i, true);
       }
       updateStripDOM();
+      saveStripStateToSession();
       closePosesModal();
       setWorkflowPhase('decorate');
       showToast('Sample romantic photos loaded onto your strip!');
       PhotoboothAudio.playShutter();
       if (state.mode === 'room' && room.isConnected) {
         room.broadcastCustomization({ refresh: true });
+        syncStripToPartner();
       }
     });
   }
@@ -612,6 +860,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const dataUrl = await PhotoboothCamera.processUploadedImage(file, 600, 450);
       state.userPhotos[state.activeSlotIndex] = dataUrl;
       updateStripDOM();
+      saveStripStateToSession();
+      syncStripToPartner();
       state.activeSlotIndex = (state.activeSlotIndex + 1) % 4;
       highlightActiveSlotTile();
     } catch (err) {
@@ -679,6 +929,8 @@ document.addEventListener('DOMContentLoaded', () => {
   btnLeaveRoom.addEventListener('click', () => {
     room.leaveRoom();
     viewfinderFrameEl.classList.remove('is-duo-view');
+    if (remoteWebcamEl) remoteWebcamEl.srcObject = null;
+    if (partnerCameraOffCard) partnerCameraOffCard.classList.add('is-hidden');
     showToast('You have left the Together Room.');
   });
 
@@ -769,6 +1021,8 @@ document.addEventListener('DOMContentLoaded', () => {
           state.userPhotos[index] = dataUrl;
         }
         updateStripDOM();
+        saveStripStateToSession();
+        syncStripToPartner();
       } catch (err) {
         alert(err.message || 'Failed to upload photo');
       }
@@ -818,6 +1072,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     updateStripDOM();
+    saveStripStateToSession();
+    syncStripToPartner();
   }
 
   // Sequential 4-Shot Session
@@ -869,6 +1125,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     stripEl.className = `photobooth-strip frame-${frame}`;
+    saveStripStateToSession();
 
     if (broadcast && state.mode === 'room' && room.isConnected) {
       room.broadcastCustomization({ frameStyle: frame });
@@ -887,6 +1144,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const text = pill.dataset.text;
       captionInput.value = text;
       stripFooterCaption.textContent = text;
+      saveStripStateToSession();
       if (state.mode === 'room' && room.isConnected) {
         room.broadcastCustomization({ caption: text });
       }
@@ -896,6 +1154,7 @@ document.addEventListener('DOMContentLoaded', () => {
   captionInput.addEventListener('input', (e) => {
     const val = e.target.value.trim() || 'mohar & gungun forever';
     stripFooterCaption.textContent = val;
+    saveStripStateToSession();
     if (state.mode === 'room' && room.isConnected) {
       room.broadcastCustomization({ caption: val });
     }
@@ -904,6 +1163,7 @@ document.addEventListener('DOMContentLoaded', () => {
   dateInput.addEventListener('input', (e) => {
     const val = e.target.value.trim() || defaultDateStr;
     stripFooterDate.textContent = `• ${val} •`;
+    saveStripStateToSession();
   });
 
   // Typography Switcher
@@ -914,6 +1174,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     stripFooterCaption.style.fontFamily = `"${font}", cursive, sans-serif`;
     captionInput.style.fontFamily = `"${font}", cursive, sans-serif`;
+    saveStripStateToSession();
 
     if (broadcast && state.mode === 'room' && room.isConnected) {
       room.broadcastCustomization({ fontFamily: font });
@@ -933,6 +1194,7 @@ document.addEventListener('DOMContentLoaded', () => {
       b.classList.toggle('is-selected', b.dataset.ink === ink);
     });
     stripFooterCaption.style.color = ink;
+    saveStripStateToSession();
 
     if (broadcast && state.mode === 'room' && room.isConnected) {
       room.broadcastCustomization({ inkColor: ink });

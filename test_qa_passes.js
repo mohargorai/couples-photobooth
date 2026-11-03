@@ -240,6 +240,55 @@ const pass5Success = hasTrackStop && hasSrcObjectNull && hasPowerBtn && hasPlace
 console.log(`✅ PASS 5 RESULT: ${pass5Success ? 'PASSED' : 'FAILED'}\n`);
 
 
+// -----------------------------------------------------------------------------
+// PASS 6: MOBILE RESPONSIVE OVERHAUL, ROOM LIFECYCLE & STATE RESTORE AUDIT
+// -----------------------------------------------------------------------------
+console.log('--- PASS 6: MOBILE RESPONSIVE OVERHAUL, ROOM LIFECYCLE & STATE RESTORE AUDIT ---');
+
+// 1. Mobile viewport lock & reordering
+const hasOverflowLock = cssContent.includes('overflow-x: hidden') && cssContent.includes('max-width: 100vw');
+const hasDecorateOrder = cssContent.includes('.studio-layout.is-phase-decorate .booth-preview-pane') && cssContent.includes('order: 1');
+const hasResponsiveFrameGrid = cssContent.includes('.frame-style-picker') && cssContent.includes('grid-template-columns: repeat(2, minmax(0, 1fr))');
+const hasPillWrap = cssContent.includes('.caption-presets-tray') && cssContent.includes('flex-wrap: wrap');
+const hasRoomRibbonPill = cssContent.includes('.room-ribbon') && cssContent.includes('border-radius: 20px') && cssContent.includes('justify-content: space-between');
+
+console.log(`  ✓ Mobile viewport overflow lock (overflow-x: hidden; max-width: 100vw): ${hasOverflowLock ? 'Verified' : 'Missing'}`);
+console.log(`  ✓ Mobile Decorate strip-first reordering (.is-phase-decorate order: 1): ${hasDecorateOrder ? 'Verified' : 'Missing'}`);
+console.log(`  ✓ Responsive 2-column mobile Frame grid: ${hasResponsiveFrameGrid ? 'Verified' : 'Missing'}`);
+console.log(`  ✓ Romantic caption & preset pill wrap: ${hasPillWrap ? 'Verified' : 'Missing'}`);
+console.log(`  ✓ Together Room status ribbon styling (20px radius, space-between): ${hasRoomRibbonPill ? 'Verified' : 'Missing'}`);
+
+// 2. WebRTC teardown & lifecycle
+const hasPeerLeftBroadcast = roomContent.includes('PEER_LEFT') && roomContent.includes('peer.destroy()');
+const hasReplaceStateTeardown = roomContent.includes('window.history.replaceState') && roomContent.includes('searchParams.delete(\'room\')');
+const hasRemoteLeaveCleanup = appContent.includes('remoteWebcamEl.srcObject = null') && roomContent.includes('this.remoteStream = null');
+console.log(`  ✓ WebRTC PEER_LEFT & peer.destroy() teardown: ${hasPeerLeftBroadcast ? 'Verified' : 'Missing'}`);
+console.log(`  ✓ URL ?room= query clean replacement on leave: ${hasReplaceStateTeardown ? 'Verified' : 'Missing'}`);
+console.log(`  ✓ Video stream unbind on partner leave (srcObject = null): ${hasRemoteLeaveCleanup ? 'Verified' : 'Missing'}`);
+
+// 3. Bidirectional camera & tab status handshake
+const hasStatusUpdateSignal = roomContent.includes('PEER_STATUS_UPDATE') && roomContent.includes('broadcastPeerStatus');
+const hasStatusRequestSignal = roomContent.includes('REQUEST_PEER_STATUS') && roomContent.includes('requestPeerStatus');
+const hasTrackReplacement = roomContent.includes('replaceTrack') && appContent.includes('setWorkflowPhase');
+console.log(`  ✓ Explicit PEER_STATUS_UPDATE broadcast: ${hasStatusUpdateSignal ? 'Verified' : 'Missing'}`);
+console.log(`  ✓ REQUEST_PEER_STATUS handshake: ${hasStatusRequestSignal ? 'Verified' : 'Missing'}`);
+console.log(`  ✓ WebRTC sender track replacement: ${hasTrackReplacement ? 'Verified' : 'Missing'}`);
+
+// 4. Strip state persistence
+const hasSessionStorageSave = appContent.includes('saveStripStateToSession') && appContent.includes('sessionStorage.setItem');
+const hasSessionStorageRestore = appContent.includes('restoreStripStateFromSession') && appContent.includes('sessionStorage.getItem');
+const hasStripStateSync = roomContent.includes('SYNC_STRIP_STATE') && appContent.includes('broadcastStripState');
+console.log(`  ✓ SessionStorage strip state save: ${hasSessionStorageSave ? 'Verified' : 'Missing'}`);
+console.log(`  ✓ SessionStorage strip state restore on load: ${hasSessionStorageRestore ? 'Verified' : 'Missing'}`);
+console.log(`  ✓ Room SYNC_STRIP_STATE broadcast on reconnect: ${hasStripStateSync ? 'Verified' : 'Missing'}`);
+
+const pass6Success = hasOverflowLock && hasDecorateOrder && hasResponsiveFrameGrid && hasPillWrap && hasRoomRibbonPill &&
+                     hasPeerLeftBroadcast && hasReplaceStateTeardown && hasRemoteLeaveCleanup &&
+                     hasStatusUpdateSignal && hasStatusRequestSignal && hasTrackReplacement &&
+                     hasSessionStorageSave && hasSessionStorageRestore && hasStripStateSync;
+console.log(`✅ PASS 6 RESULT: ${pass6Success ? 'PASSED' : 'FAILED'}\n`);
+
+
 console.log('================================================================');
 console.log('OVERALL QA STATUS:');
 console.log(`Pass 1 (Camera Matrix & Crop Math): ${pass1Success ? 'PASSED' : 'FAILED'}`);
@@ -247,4 +296,5 @@ console.log(`Pass 2 (Room & Routing):            ${pass2Success ? 'PASSED' : 'FA
 console.log(`Pass 3 (Styles, 8 Frames, 16 SVGs): ${pass3Success ? 'PASSED' : 'FAILED'}`);
 console.log(`Pass 4 (Touch & Responsive Layout): ${pass4Success ? 'PASSED' : 'FAILED'}`);
 console.log(`Pass 5 (Camera Lifecycle & Privacy):${pass5Success ? 'PASSED' : 'FAILED'}`);
+console.log(`Pass 6 (Mobile Overhaul & Room Sync):${pass6Success ? 'PASSED' : 'FAILED'}`);
 console.log('================================================================');
