@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <em>made by mohar with love for gungun &lt;3 I love you baby &lt;3</em>
+  <em>made by mohar with love for gungun &lt;3</em>
 </p>
 
 <p align="center">
@@ -84,9 +84,9 @@ This project follows a strict **anti-AI-slop, zero-emoji aesthetic philosophy**:
   7. *Blush Watercolor Wash:* Soft-edged pastel rose and cream atmospheric wash.
   8. *Warm Cocoa Film Strip:* Retro dark-cocoa photobooth negative with cream lettering.
 - **16 Custom Hand-Drawn SVG Stickers:**
-  - Includes dainty ribbon bows, doodled twin hearts, wax seals, paper airplanes, cherries, strawberries, locket amulets, and sakura blossom petals.
+  - Includes dainty ribbon bows, blooming white roses, coquette rose stems with bows, twin rosebuds with baby's breath, doodled twin hearts, wax seals, paper airplanes, cherries, strawberries, locket amulets, and sealed envelopes.
   - Floating 28px antenna rotate stem, independent drag/scale anchors, dynamic counter-scaling for finger taps, and drop shadows for visibility on both dark and light frames.
-  - 4 One-Tap Layout Presets: *Bow Overload*, *Love Letter Set*, *Soft &amp; Minimal*, and *Clear Canvas*.
+  - 4 One-Tap Layout Presets: *Bow Overload*, *Love Letter Set*, *Soft &amp; Minimal* (featuring corner white roses &amp; bows), and *Clear Canvas*.
 - **Romantic Typography &amp; Inks:**
   - 3 romantic script typefaces (`Caveat`, `Sacramento`, `Indie Flower`).
   - 3 signature ink wells: Warm Cocoa (`#5A3E42`), Soft Berry (`#D85A67`), and Dusty Rose (`#C47A87`).
@@ -180,5 +180,5 @@ To use mobile devices or share the room link across the internet, the applicatio
 <p align="center">
   <strong><a href="https://mohargorai.github.io/couples-photobooth/">Couples Photobooth</a></strong><br>
   <em>A romantic little photobooth, made with all my love for Gungun.</em><br>
-  <em>made by mohar with love for gungun &lt;3 I love you baby &lt;3</em>
+  <em>made by mohar with love for gungun &lt;3</em>
 </p>

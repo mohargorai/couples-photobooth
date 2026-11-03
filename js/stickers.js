@@ -195,41 +195,118 @@ const STICKER_CATALOG = [
     </svg>`
   },
   {
-    id: 'hand-sparkles',
-    name: 'Twinkle Sparkles',
-    width: 75,
-    height: 75,
-    svg: `<svg viewBox="0 0 90 90" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-      <path d="M 42 10 Q 42 35 17 35 Q 42 35 42 60 Q 42 35 67 35 Q 42 35 42 10 Z" fill="#FFE28A" stroke="#5A3E42" stroke-width="2" stroke-linejoin="round"/>
-      <circle cx="42" cy="35" r="2.5" fill="#5A3E42"/>
-      <path d="M 70 48 Q 70 60 58 60 Q 70 60 70 72 Q 70 60 82 60 Q 70 60 70 48 Z" fill="#FFD1DC" stroke="#5A3E42" stroke-width="1.8" stroke-linejoin="round"/>
-      <path d="M 18 62 Q 18 70 10 70 Q 18 70 18 78 Q 18 70 26 70 Q 18 70 18 62 Z" fill="#D85A67" stroke="#5A3E42" stroke-width="1.5" stroke-linejoin="round"/>
-      <circle cx="68" cy="22" r="2" fill="#5A3E42"/>
-      <circle cx="30" cy="18" r="1.5" fill="#5A3E42"/>
-      <circle cx="48" cy="74" r="2" fill="#D85A67"/>
+    id: 'white-rose-blooming',
+    name: 'Blooming White Rose',
+    width: 85,
+    height: 85,
+    svg: `<svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+      <!-- Sage Leaves with Cocoa Veins -->
+      <g id="rose-leaves">
+        <!-- Left Leaf -->
+        <path d="M 32 64 C 14 68, 8 82, 14 90 C 26 92, 38 82, 42 70 Z" fill="#B8C9B0" stroke="#5A3E42" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M 20 84 C 27 78, 34 73, 38 68" fill="none" stroke="#5A3E42" stroke-width="1.4" stroke-linecap="round"/>
+        <!-- Right Leaf -->
+        <path d="M 68 64 C 86 68, 92 82, 86 90 C 74 92, 62 82, 58 70 Z" fill="#B8C9B0" stroke="#5A3E42" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M 80 84 C 73 78, 66 73, 62 68" fill="none" stroke="#5A3E42" stroke-width="1.4" stroke-linecap="round"/>
+      </g>
+      <!-- Blooming White Rose: Layer 1 (Outer Alabaster White Petals #FFFFFF) -->
+      <path d="M 50 12 C 34 10, 18 22, 22 40 C 24 48, 30 52, 36 54 C 44 40, 56 40, 64 54 C 70 52, 76 48, 78 40 C 82 22, 66 10, 50 12 Z" fill="#FFFFFF" stroke="#5A3E42" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M 20 36 C 8 48, 10 70, 26 78 C 36 84, 44 80, 48 76 C 32 70, 26 52, 30 38 Z" fill="#FFFFFF" stroke="#5A3E42" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M 80 36 C 92 48, 90 70, 74 78 C 64 84, 56 80, 52 76 C 68 70, 74 52, 70 38 Z" fill="#FFFFFF" stroke="#5A3E42" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M 30 74 C 38 88, 62 88, 70 74 C 60 80, 40 80, 30 74 Z" fill="#FFFFFF" stroke="#5A3E42" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- Layer 2 (Soft Warm Ivory Petals #FFFDF7) -->
+      <path d="M 32 42 C 28 54, 32 68, 48 72 C 58 68, 60 58, 56 46 C 44 44, 36 46, 32 42 Z" fill="#FFFDF7" stroke="#5A3E42" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M 68 42 C 72 54, 68 68, 52 72 C 42 66, 44 56, 50 46 C 58 44, 64 44, 68 42 Z" fill="#FFFDF7" stroke="#5A3E42" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M 38 32 C 48 24, 62 26, 64 38 C 56 44, 44 42, 38 32 Z" fill="#FFFDF7" stroke="#5A3E42" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- Layer 3: Spiral Center Rosebud (Whisper of Blush Cream #F7E6EA & Ivory) -->
+      <path d="M 42 44 C 40 50, 44 58, 52 58 C 58 56, 60 48, 56 44 C 50 40, 46 42, 42 44 Z" fill="#F7E6EA" stroke="#5A3E42" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- Inner overlapping petal swirl -->
+      <path d="M 46 48 C 44 50, 48 54, 52 53 C 55 52, 55 48, 51 47 C 49 46, 47 48, 49 50" fill="none" stroke="#5A3E42" stroke-width="1.6" stroke-linecap="round"/>
+      <!-- Petal edge highlights -->
+      <path d="M 36 28 C 42 24, 58 24, 64 28" fill="none" stroke="#FFFDF7" stroke-width="1.5" stroke-linecap="round"/>
     </svg>`
   },
   {
-    id: 'blush-marks',
-    name: 'Cute Shy Blush',
+    id: 'white-rose-stem',
+    name: 'Coquette White Rose Stem',
+    width: 80,
+    height: 95,
+    svg: `<svg viewBox="0 0 90 110" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+      <!-- Slender Curved Stem -->
+      <path d="M 46 44 C 44 60, 40 82, 36 104" fill="none" stroke="#5A3E42" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M 47 46 C 45 62, 41 82, 37 102" fill="none" stroke="#B8C9B0" stroke-width="1.2" stroke-linecap="round"/>
+      <!-- Left Sage Leaf -->
+      <path d="M 43 62 C 28 60, 20 68, 22 76 C 32 78, 40 70, 43 65 Z" fill="#B8C9B0" stroke="#5A3E42" stroke-width="1.8" stroke-linejoin="round"/>
+      <path d="M 26 73 C 32 70, 38 66, 42 63" fill="none" stroke="#5A3E42" stroke-width="1.2" stroke-linecap="round"/>
+      <!-- Right Sage Leaf -->
+      <path d="M 42 78 C 55 76, 62 82, 60 90 C 50 92, 43 85, 40 80 Z" fill="#B8C9B0" stroke="#5A3E42" stroke-width="1.8" stroke-linejoin="round"/>
+      <path d="M 56 86 C 50 83, 45 80, 41 79" fill="none" stroke="#5A3E42" stroke-width="1.2" stroke-linecap="round"/>
+      <!-- Baby Pink Coquette Ribbon Bow Tied Around Stem -->
+      <g transform="translate(42, 68)">
+        <path d="M 0 0 C -12 -12, -26 -10, -28 -2 C -29 8, -12 10, 0 2" fill="#FFD1DC" stroke="#5A3E42" stroke-width="1.8" stroke-linejoin="round"/>
+        <path d="M -20 -1 C -15 2, -8 3, 0 1" fill="none" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round"/>
+        <path d="M 0 0 C 12 -12, 26 -10, 28 -2 C 29 8, 12 10, 0 2" fill="#FFD1DC" stroke="#5A3E42" stroke-width="1.8" stroke-linejoin="round"/>
+        <path d="M 20 -1 C 15 2, 8 3, 0 1" fill="none" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round"/>
+        <path d="M -3 3 C -8 10, -16 18, -20 23 C -16 22, -11 22, -7 24 C -3 16, -1 9, 0 4 Z" fill="#FFCCD7" stroke="#5A3E42" stroke-width="1.6" stroke-linejoin="round"/>
+        <path d="M 3 3 C 8 10, 16 18, 20 23 C 16 22, 11 22, 7 24 C 3 16, 1 9, 0 4 Z" fill="#FFCCD7" stroke="#5A3E42" stroke-width="1.6" stroke-linejoin="round"/>
+        <circle cx="0" cy="1" r="3.5" fill="#D85A67" stroke="#5A3E42" stroke-width="1.6"/>
+        <circle cx="-1" cy="0" r="1" fill="#FFFFFF"/>
+      </g>
+      <!-- Angled Blooming White Rose at Top -->
+      <g transform="translate(48, 26) rotate(-8)">
+        <path d="M -10 16 C -6 22, 6 22, 10 16 C 8 20, -8 20, -10 16 Z" fill="#B8C9B0" stroke="#5A3E42" stroke-width="1.8"/>
+        <path d="M 0 -18 C -16 -18, -28 -6, -26 10 C -24 18, -14 20, 0 20 C 14 20, 24 18, 26 10 C 28 -6, 16 -18, 0 -18 Z" fill="#FFFFFF" stroke="#5A3E42" stroke-width="2.2" stroke-linejoin="round"/>
+        <path d="M -18 4 C -18 14, -6 16, 0 16 C 8 16, 18 12, 16 2 C 8 12, -10 12, -18 4 Z" fill="#FFFDF7" stroke="#5A3E42" stroke-width="1.8" stroke-linejoin="round"/>
+        <path d="M -16 -8 C -20 2, -10 10, 0 10 C 10 10, 18 2, 16 -8 C 6 -2, -6 -2, -16 -8 Z" fill="#FFFDF7" stroke="#5A3E42" stroke-width="1.8" stroke-linejoin="round"/>
+        <path d="M -8 -6 C -10 2, -4 6, 0 6 C 4 6, 10 2, 8 -6 C 4 -10, -4 -10, -8 -6 Z" fill="#F7E6EA" stroke="#5A3E42" stroke-width="1.8" stroke-linejoin="round"/>
+        <path d="M -4 -4 C -2 -7, 3 -7, 4 -4 C 5 -1, 1 1, -1 1 C -3 1, -4 -1, -3 -3" fill="none" stroke="#5A3E42" stroke-width="1.5" stroke-linecap="round"/>
+      </g>
+    </svg>`
+  },
+  {
+    id: 'white-rosebuds',
+    name: 'Twin White Rosebuds',
     width: 85,
-    height: 50,
-    svg: `<svg viewBox="0 0 100 60" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-      <!-- Left soft blush lines -->
-      <g stroke="#D85A67" stroke-width="2.5" stroke-linecap="round">
-        <line x1="18" y1="20" x2="10" y2="40"/>
-        <line x1="28" y1="18" x2="20" y2="42"/>
-        <line x1="38" y1="22" x2="30" y2="44"/>
+    height: 85,
+    svg: `<svg viewBox="0 0 95 95" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+      <!-- Dainty Baby's Breath Dots & Sprigs -->
+      <g stroke="#B8C9B0" stroke-width="1.2" stroke-linecap="round">
+        <line x1="22" y1="25" x2="32" y2="38"/>
+        <line x1="15" y1="35" x2="26" y2="42"/>
+        <line x1="75" y1="20" x2="65" y2="35"/>
+        <line x1="82" y1="32" x2="70" y2="40"/>
       </g>
-      <!-- Right soft blush lines -->
-      <g stroke="#D85A67" stroke-width="2.5" stroke-linecap="round">
-        <line x1="62" y1="22" x2="70" y2="44"/>
-        <line x1="72" y1="18" x2="80" y2="42"/>
-        <line x1="82" y1="20" x2="90" y2="40"/>
+      <circle cx="20" cy="24" r="3" fill="#FFFFFF" stroke="#5A3E42" stroke-width="1.2"/>
+      <circle cx="14" cy="35" r="2.5" fill="#FFFDF7" stroke="#5A3E42" stroke-width="1.2"/>
+      <circle cx="76" cy="18" r="3" fill="#FFFFFF" stroke="#5A3E42" stroke-width="1.2"/>
+      <circle cx="84" cy="32" r="2.5" fill="#FFFDF7" stroke="#5A3E42" stroke-width="1.2"/>
+      <circle cx="50" cy="12" r="2" fill="#FFFFFF" stroke="#5A3E42" stroke-width="1"/>
+      <!-- Stems & Sage Leaves -->
+      <path d="M 38 48 C 36 62, 42 76, 46 88" fill="none" stroke="#5A3E42" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M 58 54 C 56 66, 50 78, 46 88" fill="none" stroke="#5A3E42" stroke-width="2.2" stroke-linecap="round"/>
+      <!-- Sage Leaves at Base -->
+      <path d="M 42 70 C 28 70, 24 78, 28 84 C 36 84, 42 78, 44 73 Z" fill="#B8C9B0" stroke="#5A3E42" stroke-width="1.8" stroke-linejoin="round"/>
+      <path d="M 30 81 C 36 78, 40 75, 43 72" fill="none" stroke="#5A3E42" stroke-width="1.2" stroke-linecap="round"/>
+      <path d="M 48 72 C 60 70, 68 76, 66 84 C 56 86, 50 80, 47 75 Z" fill="#B8C9B0" stroke="#5A3E42" stroke-width="1.8" stroke-linejoin="round"/>
+      <path d="M 62 81 C 56 78, 52 75, 48 73" fill="none" stroke="#5A3E42" stroke-width="1.2" stroke-linecap="round"/>
+      <!-- Left Rosebud (Slightly taller) -->
+      <g transform="translate(36, 40) rotate(-10)">
+        <path d="M -10 12 C -8 0, -12 -6, -14 -12 C -6 -6, -4 4, -4 14 Z" fill="#B8C9B0" stroke="#5A3E42" stroke-width="1.6" stroke-linejoin="round"/>
+        <path d="M 10 12 C 8 0, 12 -6, 14 -12 C 6 -6, 4 4, 4 14 Z" fill="#B8C9B0" stroke="#5A3E42" stroke-width="1.6" stroke-linejoin="round"/>
+        <path d="M -10 12 C -14 0, -10 -16, 0 -22 C 10 -16, 14 0, 10 12 C 4 15, -4 15, -10 12 Z" fill="#FFFFFF" stroke="#5A3E42" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M -8 10 C -10 -2, -6 -14, 0 -18 C 6 -12, 4 0, 6 10 Z" fill="#FFFDF7" stroke="#5A3E42" stroke-width="1.6" stroke-linejoin="round"/>
+        <path d="M -4 4 C -6 -4, -2 -12, 0 -14 C 3 -10, 2 -2, 2 6 Z" fill="#F7E6EA" stroke="#5A3E42" stroke-width="1.4" stroke-linejoin="round"/>
+        <path d="M -1 -12 C 1 -10, 0 -4, -1 -2" fill="none" stroke="#5A3E42" stroke-width="1.3" stroke-linecap="round"/>
       </g>
-      <!-- Mini hearts on cheeks -->
-      <path d="M 24 14 C 22 11, 18 12, 18 15 C 18 19, 24 22, 24 22 C 24 22, 30 19, 30 15 C 30 12, 26 11, 24 14 Z" fill="#FFCCD7"/>
-      <path d="M 76 14 C 74 11, 70 12, 70 15 C 70 19, 76 22, 76 22 C 76 22, 82 19, 82 15 C 82 12, 78 11, 76 14 Z" fill="#FFCCD7"/>
+      <!-- Right Rosebud (Cozying next to left) -->
+      <g transform="translate(58, 46) rotate(14)">
+        <path d="M -8 10 C -6 0, -10 -5, -12 -10 C -5 -5, -3 3, -3 12 Z" fill="#B8C9B0" stroke="#5A3E42" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M 8 10 C 6 0, 10 -5, 12 -10 C 5 -5, 3 3, 3 12 Z" fill="#B8C9B0" stroke="#5A3E42" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M -8 10 C -12 0, -8 -14, 0 -18 C 8 -14, 12 0, 8 10 C 3 13, -3 13, -8 10 Z" fill="#FFFFFF" stroke="#5A3E42" stroke-width="1.8" stroke-linejoin="round"/>
+        <path d="M -6 8 C -8 -2, -4 -10, 0 -14 C 4 -10, 4 0, 4 8 Z" fill="#FFFDF7" stroke="#5A3E42" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M -3 3 C -4 -3, -1 -8, 0 -10 C 2 -7, 1 -1, 1 5 Z" fill="#F7E6EA" stroke="#5A3E42" stroke-width="1.3" stroke-linejoin="round"/>
+        <path d="M 0 -8 C 1 -6, 0 -2, -1 0" fill="none" stroke="#5A3E42" stroke-width="1.2" stroke-linecap="round"/>
+      </g>
     </svg>`
   },
   {
@@ -244,26 +321,6 @@ const STICKER_CATALOG = [
       <text x="65" y="34" font-family="Caveat, cursive" font-size="16" font-weight="bold" fill="#5A3E42" text-anchor="middle">forever &amp; always</text>
       <circle cx="34" cy="30" r="1.5" fill="#D85A67"/>
       <circle cx="96" cy="30" r="1.5" fill="#D85A67"/>
-    </svg>`
-  },
-  {
-    id: 'cherry-blossom',
-    name: 'Pressed Sakura',
-    width: 75,
-    height: 75,
-    svg: `<svg viewBox="0 0 90 90" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-      <g transform="translate(45, 45)">
-        <path d="M 0 0 C -12 -15, -14 -32, 0 -38 C 14 -32, 12 -15, 0 0" fill="#FFE2E8" stroke="#5A3E42" stroke-width="2" stroke-linecap="round"/>
-        <path d="M 0 0 C -12 -15, -14 -32, 0 -38 C 14 -32, 12 -15, 0 0" transform="rotate(72)" fill="#FFD4DE" stroke="#5A3E42" stroke-width="2" stroke-linecap="round"/>
-        <path d="M 0 0 C -12 -15, -14 -32, 0 -38 C 14 -32, 12 -15, 0 0" transform="rotate(144)" fill="#FFE2E8" stroke="#5A3E42" stroke-width="2" stroke-linecap="round"/>
-        <path d="M 0 0 C -12 -15, -14 -32, 0 -38 C 14 -32, 12 -15, 0 0" transform="rotate(216)" fill="#FFD4DE" stroke="#5A3E42" stroke-width="2" stroke-linecap="round"/>
-        <path d="M 0 0 C -12 -15, -14 -32, 0 -38 C 14 -32, 12 -15, 0 0" transform="rotate(288)" fill="#FFE2E8" stroke="#5A3E42" stroke-width="2" stroke-linecap="round"/>
-        <circle cx="0" cy="0" r="5" fill="#D85A67"/>
-        <circle cx="-3" cy="-3" r="1.5" fill="#5A3E42"/>
-        <circle cx="3" cy="-3" r="1.5" fill="#5A3E42"/>
-        <circle cx="-2" cy="3" r="1.5" fill="#5A3E42"/>
-        <circle cx="3" cy="2" r="1.5" fill="#5A3E42"/>
-      </g>
     </svg>`
   }
 ];
@@ -377,10 +434,10 @@ class StickerStudio {
         break;
 
       case 'soft-minimal':
-        this.addSticker('twin-hearts', { xPercent: 0.70, yPercent: 0.02, scale: 0.85, rotation: 8 });
-        this.addSticker('blush-marks', { xPercent: 0.05, yPercent: 0.42, scale: 0.8, rotation: -5 });
-        this.addSticker('cherry-blossom', { xPercent: 0.74, yPercent: 0.86, scale: 0.85, rotation: 15 });
-        this.addSticker('hand-sparkles', { xPercent: 0.08, yPercent: 0.88, scale: 0.8, rotation: 0 });
+        this.addSticker('white-rose-blooming', { xPercent: 0.05, yPercent: 0.015, scale: 0.88, rotation: -8 });
+        this.addSticker('coquette-bow-pink', { xPercent: 0.72, yPercent: 0.015, scale: 0.88, rotation: 8 });
+        this.addSticker('white-rosebuds', { xPercent: 0.06, yPercent: 0.88, scale: 0.85, rotation: -6 });
+        this.addSticker('white-rose-stem', { xPercent: 0.68, yPercent: 0.86, scale: 0.88, rotation: 12 });
         break;
 
       case 'clear':

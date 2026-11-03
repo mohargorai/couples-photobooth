@@ -43,26 +43,48 @@
   <!-- Scalloped Inner Frame Trim -->
   <rect x="22" y="22" width="816" height="216" rx="16" fill="none" stroke="#E2B8BF" stroke-width="1.5" stroke-dasharray="6 6"/>
 
-  <!-- Decorative Corner Vignettes (Hand-drawn hearts) -->
-  <!-- Top Left Heart -->
-  <path d="M 42 42 C 40 37, 34 38, 34 44 C 34 50, 42 56, 42 56 C 42 56, 50 50, 50 44 C 50 38, 44 37, 42 42 Z" fill="#FFCCD7" stroke="#5A3E42" stroke-width="1.2"/>
-  <!-- Top Right Heart -->
-  <path d="M 818 42 C 816 37, 810 38, 810 44 C 810 50, 818 56, 818 56 C 818 56, 826 50, 826 44 C 826 38, 820 37, 818 42 Z" fill="#FFCCD7" stroke="#5A3E42" stroke-width="1.2"/>
-  <!-- Bottom Left Heart -->
-  <path d="M 42 208 C 40 203, 34 204, 34 210 C 34 216, 42 222, 42 222 C 42 222, 50 216, 50 210 C 50 204, 44 203, 42 208 Z" fill="#FFCCD7" stroke="#5A3E42" stroke-width="1.2"/>
-  <!-- Bottom Right Heart -->
-  <path d="M 818 208 C 816 203, 810 204, 810 210 C 810 216, 818 222, 818 222 C 818 222, 826 216, 826 210 C 826 204, 820 203, 818 208 Z" fill="#FFCCD7" stroke="#5A3E42" stroke-width="1.2"/>
+  <!-- Decorative Corner Vignettes: Hand-Drawn White Rosebuds with Sage Leaves -->
+  <!-- Top Left Rosebud -->
+  <g transform="translate(42, 42) rotate(-20) scale(0.65)">
+    <path d="M 0 10 C -12 6, -16 20, -10 26 C -2 28, 4 18, 0 10 Z" fill="#B8C9B0" stroke="#5A3E42" stroke-width="1.5"/>
+    <path d="M -8 10 C -12 0, -8 -12, 0 -16 C 8 -12, 12 0, 8 10 Z" fill="#FFFFFF" stroke="#5A3E42" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M -6 8 C -6 -2, -2 -10, 0 -12 C 4 -8, 4 0, 4 8 Z" fill="#FFFDF7" stroke="#5A3E42" stroke-width="1.4"/>
+    <path d="M -2 2 C -3 -3, 0 -7, 0 -8 C 2 -6, 1 0, 1 4 Z" fill="#F7E6EA" stroke="#5A3E42" stroke-width="1.2"/>
+  </g>
+
+  <!-- Top Right Rosebud -->
+  <g transform="translate(818, 42) rotate(20) scale(0.65)">
+    <path d="M 0 10 C 12 6, 16 20, 10 26 C 2 28, -4 18, 0 10 Z" fill="#B8C9B0" stroke="#5A3E42" stroke-width="1.5"/>
+    <path d="M 8 10 C 12 0, 8 -12, 0 -16 C -8 -12, -12 0, -8 10 Z" fill="#FFFFFF" stroke="#5A3E42" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M 6 8 C 6 -2, 2 -10, 0 -12 C -4 -8, -4 0, -4 8 Z" fill="#FFFDF7" stroke="#5A3E42" stroke-width="1.4"/>
+    <path d="M 2 2 C 3 -3, 0 -7, 0 -8 C -2 -6, -1 0, -1 4 Z" fill="#F7E6EA" stroke="#5A3E42" stroke-width="1.2"/>
+  </g>
+
+  <!-- Bottom Left Rosebud -->
+  <g transform="translate(42, 218) rotate(-160) scale(0.65)">
+    <path d="M 0 10 C -12 6, -16 20, -10 26 C -2 28, 4 18, 0 10 Z" fill="#B8C9B0" stroke="#5A3E42" stroke-width="1.5"/>
+    <path d="M -8 10 C -12 0, -8 -12, 0 -16 C 8 -12, 12 0, 8 10 Z" fill="#FFFFFF" stroke="#5A3E42" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M -6 8 C -6 -2, -2 -10, 0 -12 C 4 -8, 4 0, 4 8 Z" fill="#FFFDF7" stroke="#5A3E42" stroke-width="1.4"/>
+  </g>
+
+  <!-- Bottom Right Rosebud -->
+  <g transform="translate(818, 218) rotate(160) scale(0.65)">
+    <path d="M 0 10 C 12 6, 16 20, 10 26 C 2 28, -4 18, 0 10 Z" fill="#B8C9B0" stroke="#5A3E42" stroke-width="1.5"/>
+    <path d="M 8 10 C 12 0, 8 -12, 0 -16 C -8 -12, -12 0, -8 10 Z" fill="#FFFFFF" stroke="#5A3E42" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M 6 8 C 6 -2, 2 -10, 0 -12 C -4 -8, -4 0, -4 8 Z" fill="#FFFDF7" stroke="#5A3E42" stroke-width="1.4"/>
+  </g>
 
   <!-- Miniature Photobooth Strips on Left & Right -->
-  <!-- Left Strip: Tilted (-12 deg) -->
+  <!-- Left Strip: Tilted (-10 deg) -->
   <g transform="translate(68, 48) rotate(-10)">
     <rect x="0" y="0" width="56" height="150" rx="6" fill="#FFFFFF" stroke="#5A3E42" stroke-width="1.8"/>
     <rect x="6" y="8" width="44" height="28" rx="3" fill="#FFEBF0" stroke="#E2B8BF" stroke-width="1"/>
     <rect x="6" y="42" width="44" height="28" rx="3" fill="#FFF0F4" stroke="#E2B8BF" stroke-width="1"/>
     <rect x="6" y="76" width="44" height="28" rx="3" fill="#FFEBF0" stroke="#E2B8BF" stroke-width="1"/>
     <rect x="6" y="110" width="44" height="28" rx="3" fill="#FFF0F4" stroke="#E2B8BF" stroke-width="1"/>
-    <!-- Mini cut icons -->
-    <path d="M 28 20 C 26 18, 23 18, 23 21 C 23 24, 28 27, 28 27 C 28 27, 33 24, 33 21 C 33 18, 30 18, 28 20 Z" fill="#D85A67"/>
+    <!-- Mini white rose sketch in Cut 1 -->
+    <circle cx="28" cy="22" r="5" fill="#FFFFFF" stroke="#5A3E42" stroke-width="1"/>
+    <path d="M 28 20 C 26 21, 27 23, 29 23" fill="none" stroke="#5A3E42" stroke-width="0.8"/>
     <circle cx="28" cy="56" r="4" fill="#FFCCD7"/>
     <path d="M 28 88 C 26 86, 23 86, 23 89 C 23 92, 28 95, 28 95 C 28 95, 33 92, 33 89 C 33 86, 30 86, 28 88 Z" fill="#D85A67"/>
   </g>
@@ -76,6 +98,33 @@
     <rect x="6" y="110" width="44" height="28" rx="3" fill="#FFEBF0" stroke="#E2B8BF" stroke-width="1"/>
     <path d="M 28 20 C 26 18, 23 18, 23 21 C 23 24, 28 27, 28 27 C 28 27, 33 24, 33 21 C 33 18, 30 18, 28 20 Z" fill="#D85A67"/>
     <circle cx="28" cy="90" r="4" fill="#FFCCD7"/>
+  </g>
+
+  <!-- Flanking Hand-Drawn White Roses next to Center Bow -->
+  <!-- Left Rose -->
+  <g transform="translate(345, 48) scale(0.42)">
+    <path d="M 32 64 C 14 68, 8 82, 14 90 C 26 92, 38 82, 42 70 Z" fill="#B8C9B0" stroke="#5A3E42" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 50 12 C 34 10, 18 22, 22 40 C 24 48, 30 52, 36 54 C 44 40, 56 40, 64 54 C 70 52, 76 48, 78 40 C 82 22, 66 10, 50 12 Z" fill="#FFFFFF" stroke="#5A3E42" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 20 36 C 8 48, 10 70, 26 78 C 36 84, 44 80, 48 76 C 32 70, 26 52, 30 38 Z" fill="#FFFFFF" stroke="#5A3E42" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 80 36 C 92 48, 90 70, 74 78 C 64 84, 56 80, 52 76 C 68 70, 74 52, 70 38 Z" fill="#FFFFFF" stroke="#5A3E42" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 30 74 C 38 88, 62 88, 70 74 C 60 80, 40 80, 30 74 Z" fill="#FFFFFF" stroke="#5A3E42" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 32 42 C 28 54, 32 68, 48 72 C 58 68, 60 58, 56 46 C 44 44, 36 46, 32 42 Z" fill="#FFFDF7" stroke="#5A3E42" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M 68 42 C 72 54, 68 68, 52 72 C 42 66, 44 56, 50 46 C 58 44, 64 44, 68 42 Z" fill="#FFFDF7" stroke="#5A3E42" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M 42 44 C 40 50, 44 58, 52 58 C 58 56, 60 48, 56 44 C 50 40, 46 42, 42 44 Z" fill="#F7E6EA" stroke="#5A3E42" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M 46 48 C 44 50, 48 54, 52 53 C 55 52, 55 48, 51 47" fill="none" stroke="#5A3E42" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- Right Rose -->
+  <g transform="translate(515, 48) scale(0.42)">
+    <path d="M 68 64 C 86 68, 92 82, 86 90 C 74 92, 62 82, 58 70 Z" fill="#B8C9B0" stroke="#5A3E42" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 50 12 C 34 10, 18 22, 22 40 C 24 48, 30 52, 36 54 C 44 40, 56 40, 64 54 C 70 52, 76 48, 78 40 C 82 22, 66 10, 50 12 Z" fill="#FFFFFF" stroke="#5A3E42" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 20 36 C 8 48, 10 70, 26 78 C 36 84, 44 80, 48 76 C 32 70, 26 52, 30 38 Z" fill="#FFFFFF" stroke="#5A3E42" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 80 36 C 92 48, 90 70, 74 78 C 64 84, 56 80, 52 76 C 68 70, 74 52, 70 38 Z" fill="#FFFFFF" stroke="#5A3E42" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 30 74 C 38 88, 62 88, 70 74 C 60 80, 40 80, 30 74 Z" fill="#FFFFFF" stroke="#5A3E42" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 32 42 C 28 54, 32 68, 48 72 C 58 68, 60 58, 56 46 C 44 44, 36 46, 32 42 Z" fill="#FFFDF7" stroke="#5A3E42" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M 68 42 C 72 54, 68 68, 52 72 C 42 66, 44 56, 50 46 C 58 44, 64 44, 68 42 Z" fill="#FFFDF7" stroke="#5A3E42" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M 42 44 C 40 50, 44 58, 52 58 C 58 56, 60 48, 56 44 C 50 40, 46 42, 42 44 Z" fill="#F7E6EA" stroke="#5A3E42" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M 46 48 C 44 50, 48 54, 52 53 C 55 52, 55 48, 51 47" fill="none" stroke="#5A3E42" stroke-width="2.5" stroke-linecap="round"/>
   </g>
 
   <!-- Center Artwork: Hand-Drawn Coquette Bow -->
@@ -113,5 +162,5 @@
   <text x="430" y="188" text-anchor="middle" class="banner-subtitle">Together From Afar  •  Bespoke 4-Cut Studio</text>
 
   <!-- Romantic Dedication Stamp -->
-  <text x="430" y="216" text-anchor="middle" class="banner-dedication">~ made by mohar &lt;3 for gungun &lt;3 ~</text>
+  <text x="430" y="216" text-anchor="middle" class="banner-dedication">~ made by mohar with love for gungun &lt;3 ~</text>
 </svg>

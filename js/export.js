@@ -435,9 +435,8 @@ class PhotoboothExporter {
     ctx.bezierCurveTo(cx + divW * 0.2, footerY + 20, cx + divW * 0.5, footerY + 10, cx + divW, footerY + 15);
     ctx.stroke();
 
-    // Center bow knot on divider
-    ctx.fillStyle = '#D85A67';
-    this.drawMiniHeart(ctx, cx, footerY + 14, 10);
+    // Center White Rose on divider
+    this.drawMiniWhiteRose(ctx, cx, footerY + 15, 12);
     ctx.restore();
 
     // Editable Caption with selected font & ink
@@ -459,7 +458,46 @@ class PhotoboothExporter {
 
     ctx.font = '16px Nunito, sans-serif';
     ctx.fillStyle = '#BCA3A7';
-    ctx.fillText('made by mohar • for gungun with love', cx, footerY + 185);
+    ctx.fillText('made by mohar with love for gungun <3', cx, footerY + 185);
+    ctx.restore();
+  }
+
+  drawMiniWhiteRose(ctx, cx, cy, size = 12) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    // Sage sepal
+    ctx.fillStyle = '#B8C9B0';
+    ctx.strokeStyle = '#5A3E42';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.ellipse(0, size * 0.4, size * 0.9, size * 0.35, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Outer white petals
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.arc(0, 0, size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Mid ivory layer
+    ctx.fillStyle = '#FFFDF7';
+    ctx.beginPath();
+    ctx.arc(0, 0, size * 0.65, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Inner blush center & swirl
+    ctx.fillStyle = '#F7E6EA';
+    ctx.beginPath();
+    ctx.arc(0, 0, size * 0.35, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(0, -size * 0.05, size * 0.15, 0, Math.PI);
+    ctx.stroke();
     ctx.restore();
   }
 
