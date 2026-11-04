@@ -435,25 +435,37 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   function updateRoomUI(status) {
+    const currentRoomId = status.roomId || (room ? room.roomId : null);
+
     if (status.state === 'waiting_for_partner') {
       roomPulseDot.className = 'status-pulse is-waiting';
-      roomStatusText.textContent = 'Waiting for partner to join...';
+      roomStatusText.textContent = status.message || 'Waiting for partner to join...';
       roomIdBadge.classList.remove('is-hidden');
-      roomCodeDisplay.textContent = status.roomId;
+      if (currentRoomId) roomCodeDisplay.textContent = currentRoomId;
       btnCreateRoom.classList.add('is-hidden');
       btnCopyInvite.classList.remove('is-hidden');
       btnLeaveRoom.classList.remove('is-hidden');
-      showToast('Room created! Share your invite link.');
+      if (status.showToast) {
+        showToast('Room created! Share your invite link.');
+      }
     } else if (status.state === 'connected') {
       roomPulseDot.className = 'status-pulse is-online';
       roomStatusText.textContent = 'Partner connected!';
       roomIdBadge.classList.remove('is-hidden');
+      if (currentRoomId) roomCodeDisplay.textContent = currentRoomId;
       btnCreateRoom.classList.add('is-hidden');
       btnCopyInvite.classList.remove('is-hidden');
       btnLeaveRoom.classList.remove('is-hidden');
-    } else if (status.state === 'connecting') {
+    } else if (status.state === 'connecting' || status.state === 'reconnecting') {
       roomPulseDot.className = 'status-pulse is-waiting';
-      roomStatusText.textContent = status.message || 'Connecting...';
+      roomStatusText.textContent = status.message || (status.state === 'reconnecting' ? 'Reconnecting room...' : 'Connecting...');
+      if (currentRoomId) {
+        roomIdBadge.classList.remove('is-hidden');
+        roomCodeDisplay.textContent = currentRoomId;
+        btnCreateRoom.classList.add('is-hidden');
+        btnCopyInvite.classList.remove('is-hidden');
+        btnLeaveRoom.classList.remove('is-hidden');
+      }
     } else {
       roomPulseDot.className = 'status-pulse';
       roomStatusText.textContent = status.message || 'Room offline';
@@ -826,23 +838,66 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Browser Tab Minimization & Mobile App Switching Visibility Listener
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      // Minimize/background: release camera hardware stream immediately
-      if (camera.isStreaming) {
-        camera.stopCamera();
-        if (state.mode === 'room' && room.isConnected) {
-          room.broadcastCameraState(false);
-        }
+  async function handleAppResume() {
+    await ensureCameraActive();
+
+    const savedSession = room ? room.getSavedRoomSession() : null;
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlRoom = urlParams.get('room');
+    const activeRoomId = urlRoom || (savedSession ? savedSession.roomId : null);
+
+    if (activeRoomId && room) {
+      if (state.mode !== 'room') {
+        setBoothMode('room');
       }
-    } else {
-      // Return: resume only if currently in Shoot phase and not manually turned off
-      const isShootActive = tabPhaseShoot && tabPhaseShoot.classList.contains('is-active') && !welcomeModal.classList.contains('is-dismissed') === false;
-      if (isShootActive && !state.cameraManuallyTurnedOff) {
-        enableCamera(false);
+      await room.ensureConnected(activeRoomId);
+      if (camera.stream) {
+        room.updateLocalStream(camera.stream);
       }
     }
+  }
+
+  async function ensureCameraActive() {
+    if (state.cameraManuallyTurnedOff) return;
+    if (state.currentPhase !== 'shoot') return;
+
+    if (localVideoBox) localVideoBox.classList.remove('is-hidden');
+    if (cameraOffPlaceholder) cameraOffPlaceholder.classList.add('is-hidden');
+
+    const stream = camera.stream;
+    const tracks = stream ? stream.getVideoTracks() : [];
+    const isTrackDead = !tracks.length || tracks.some(t => t.readyState === 'ended' || !t.enabled);
+    const isVideoElementDead = !webcamEl.srcObject || webcamEl.paused || webcamEl.readyState === 0;
+
+    if (!stream || isTrackDead || isVideoElementDead) {
+      console.log('Restoring camera feed after app switch / background...');
+      try {
+        const newStream = await enableCamera(false);
+        if (newStream && room && room.isConnected) {
+          room.updateLocalStream(newStream);
+        }
+      } catch (e) {
+        console.warn('Failed to restore camera feed:', e);
+      }
+    } else if (webcamEl.paused) {
+      webcamEl.play().catch(() => {});
+    }
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      // Do NOT release camera hardware if actively in a Together Room or waiting in a room session
+      const inRoom = state.mode === 'room' || (room && room.roomId);
+      if (!inRoom && camera.isStreaming) {
+        camera.stopCamera();
+      }
+    } else {
+      handleAppResume();
+    }
   });
+
+  window.addEventListener('focus', handleAppResume);
+  window.addEventListener('pageshow', handleAppResume);
 
   btnToggleTimer.addEventListener('click', () => {
     state.timerDuration = state.timerDuration === 3 ? 5 : 3;
@@ -989,14 +1044,23 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast('You have left the Together Room.');
   });
 
-  // Check URL query on load: e.g. ?room=rose-4892
+  // Check URL query or sessionStorage on load: e.g. ?room=rose-4892
   const urlParams = new URLSearchParams(window.location.search);
   const roomParam = urlParams.get('room');
-  if (roomParam) {
+  const savedSession = room ? room.getSavedRoomSession() : null;
+  const initialRoomId = roomParam || (savedSession ? savedSession.roomId : null);
+
+  if (initialRoomId) {
     setBoothMode('room');
     welcomeModal.classList.add('is-hidden');
-    initWebcam().then(() => {
-      room.joinRoom(roomParam, camera.stream);
+    welcomeModal.classList.add('is-dismissed');
+    initWebcam().then((stream) => {
+      const role = (savedSession && savedSession.roomId === initialRoomId) ? savedSession.role : (roomParam ? 'guest' : 'host');
+      if (role === 'host') {
+        room.createRoom(initialRoomId);
+      } else {
+        room.joinRoom(initialRoomId, stream || camera.stream);
+      }
     });
   }
 

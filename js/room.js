@@ -34,6 +34,7 @@ class TogetherRoom {
       cameraActive: true
     };
     this.heartbeatTimer = null;
+    this.guestRetryTimer = null;
 
     // Callbacks
     this.onRemoteStream = onRemoteStream || (() => {});
@@ -58,6 +59,37 @@ class TogetherRoom {
     const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
     const num = Math.floor(1000 + Math.random() * 9000);
     return `${prefix}-${num}`;
+  }
+
+  saveRoomSession(roomId, role) {
+    try {
+      if (roomId) {
+        sessionStorage.setItem('couples_photobooth_room_id', roomId);
+        sessionStorage.setItem('couples_photobooth_room_role', role || 'host');
+      }
+    } catch (e) {
+      console.warn('SessionStorage save error:', e);
+    }
+  }
+
+  getSavedRoomSession() {
+    try {
+      const roomId = sessionStorage.getItem('couples_photobooth_room_id');
+      const role = sessionStorage.getItem('couples_photobooth_room_role') || 'host';
+      if (roomId) return { roomId, role };
+    } catch (e) {
+      console.warn('SessionStorage get error:', e);
+    }
+    return null;
+  }
+
+  clearRoomSession() {
+    try {
+      sessionStorage.removeItem('couples_photobooth_room_id');
+      sessionStorage.removeItem('couples_photobooth_room_role');
+    } catch (e) {
+      console.warn('SessionStorage clear error:', e);
+    }
   }
 
   /**
@@ -118,6 +150,8 @@ class TogetherRoom {
         }
 
         const peerConfig = {
+          debug: 1,
+          pingInterval: 5000,
           config: {
             iceServers: [
               { urls: 'stun:stun.l.google.com:19302' },
@@ -133,7 +167,7 @@ class TogetherRoom {
         this.peer = peerId ? new window.Peer(peerId, peerConfig) : new window.Peer(peerConfig);
 
         this.peer.on('open', (id) => {
-          this.onStatusChange({ state: 'ready', peerId: id });
+          this.onStatusChange({ state: 'ready', peerId: id, roomId: this.roomId });
           resolve(id);
         });
 
@@ -161,17 +195,50 @@ class TogetherRoom {
 
         this.peer.on('error', (err) => {
           console.warn('PeerJS connection error:', err);
-          this.onStatusChange({ state: 'error', message: err.type || err.message });
-          if (err.type === 'unavailable-id') {
-            // Room ID collision, retry with fallback
+          const errType = err.type || '';
+
+          if (errType === 'unavailable-id') {
+            console.warn('Room ID collision / broker delay, retrying in 500ms...');
             setTimeout(() => {
-              this.createRoom();
+              if (this.roomId) {
+                if (this.isHost) {
+                  this.initPeer(`coquette-pb-${this.roomId}`).catch(() => {});
+                } else {
+                  this.initPeer().catch(() => {});
+                }
+              }
             }, 500);
+            return;
+          }
+
+          if (errType === 'peer-unavailable') {
+            console.log('Partner peer temporarily unavailable on broker; retry loop is active.');
+            return;
+          }
+
+          if (this.roomId) {
+            this.onStatusChange({
+              state: 'reconnecting',
+              roomId: this.roomId,
+              message: 'Reconnecting room...'
+            });
+            if (this.peer && !this.peer.destroyed) {
+              try { this.peer.reconnect(); } catch (e) {}
+            }
+          } else {
+            this.onStatusChange({ state: 'error', message: err.type || err.message });
           }
         });
 
         this.peer.on('disconnected', () => {
           console.log('Peer disconnected from signaling broker, attempting auto-reconnect...');
+          if (this.roomId) {
+            this.onStatusChange({
+              state: 'reconnecting',
+              roomId: this.roomId,
+              message: 'Reconnecting room...'
+            });
+          }
           if (this.peer && !this.peer.destroyed) {
             try { this.peer.reconnect(); } catch (e) {}
           }
@@ -188,7 +255,8 @@ class TogetherRoom {
   async createRoom(customId = null) {
     this.isHost = true;
     this.roomId = customId || TogetherRoom.generateRoomId();
-    this.onStatusChange({ state: 'connecting', message: 'Creating your room...' });
+    this.saveRoomSession(this.roomId, 'host');
+    this.onStatusChange({ state: 'connecting', roomId: this.roomId, message: 'Creating your room...' });
 
     // Prefix for namespacing on public broker
     const brokerId = `coquette-pb-${this.roomId}`;
@@ -203,7 +271,8 @@ class TogetherRoom {
       state: 'waiting_for_partner',
       roomId: this.roomId,
       inviteUrl: url.toString(),
-      message: 'Waiting for partner to join...'
+      message: 'Waiting for partner to join...',
+      showToast: !customId
     });
 
     return {
@@ -219,19 +288,159 @@ class TogetherRoom {
     this.isHost = false;
     this.roomId = roomId;
     this.localStream = localStream;
-    this.onStatusChange({ state: 'connecting', message: 'Connecting to room...' });
+    this.saveRoomSession(this.roomId, 'guest');
+    this.onStatusChange({
+      state: 'connecting',
+      roomId: this.roomId,
+      message: "Connecting to partner's room... <3"
+    });
+
+    // Update browser URL query string without reloading
+    const url = new URL(window.location.href);
+    url.searchParams.set('room', this.roomId);
+    window.history.replaceState({ room: this.roomId }, '', url.toString());
 
     await this.initPeer(); // random ID for client
 
+    this.startGuestConnectionLoop();
+  }
+
+  startGuestConnectionLoop() {
+    this.stopGuestConnectionLoop();
+
+    let attempts = 0;
+    const maxAttempts = 15;
     const hostBrokerId = `coquette-pb-${this.roomId}`;
 
-    // Establish Data Connection
-    const conn = this.peer.connect(hostBrokerId, { reliable: true });
-    this.setupDataConnection(conn);
+    const tryConnect = () => {
+      if (this.isConnected || !this.roomId) {
+        this.stopGuestConnectionLoop();
+        return;
+      }
 
-    // Establish Media Call if local stream is ready
-    if (this.localStream) {
-      this.callHost(hostBrokerId);
+      attempts++;
+      console.log(`[Guest] Connecting to host (${hostBrokerId}), attempt ${attempts}/${maxAttempts}...`);
+      this.onStatusChange({
+        state: 'connecting',
+        roomId: this.roomId,
+        message: "Connecting to partner's room... <3"
+      });
+
+      try {
+        if (!this.peer || this.peer.destroyed) {
+          this.initPeer().then(() => tryConnect()).catch(() => {});
+          return;
+        }
+
+        if (this.conn && !this.conn.open) {
+          try { this.conn.close(); } catch (e) {}
+        }
+
+        const conn = this.peer.connect(hostBrokerId, { reliable: true });
+        this.setupDataConnection(conn);
+
+        if (this.localStream) {
+          this.callHost(hostBrokerId);
+        }
+      } catch (err) {
+        console.warn('[Guest] Connection attempt error:', err);
+      }
+
+      if (attempts >= maxAttempts) {
+        this.stopGuestConnectionLoop();
+        this.onStatusChange({
+          state: 'waiting_for_partner',
+          roomId: this.roomId,
+          message: 'Waiting for partner to join...'
+        });
+      }
+    };
+
+    tryConnect();
+
+    this.guestRetryTimer = setInterval(() => {
+      if (this.isConnected || !this.roomId) {
+        this.stopGuestConnectionLoop();
+        return;
+      }
+      tryConnect();
+    }, 2000);
+  }
+
+  stopGuestConnectionLoop() {
+    if (this.guestRetryTimer) {
+      clearInterval(this.guestRetryTimer);
+      this.guestRetryTimer = null;
+    }
+  }
+
+  waitForPeerOpen(timeoutMs = 1500) {
+    return new Promise((resolve) => {
+      if (this.peer && this.peer.open && !this.peer.disconnected) {
+        return resolve(true);
+      }
+      let timer = null;
+      const onOpen = () => {
+        cleanup();
+        resolve(true);
+      };
+      const cleanup = () => {
+        if (timer) clearTimeout(timer);
+        if (this.peer) this.peer.off('open', onOpen);
+      };
+      if (this.peer) {
+        this.peer.once('open', onOpen);
+      }
+      timer = setTimeout(() => {
+        cleanup();
+        resolve(this.peer && this.peer.open && !this.peer.disconnected);
+      }, timeoutMs);
+    });
+  }
+
+  async ensureConnected(targetRoomId) {
+    const roomId = targetRoomId || this.roomId;
+    if (!roomId) return;
+    this.roomId = roomId;
+
+    if (this.isConnected && this.conn && this.conn.open && this.peer && this.peer.open && !this.peer.disconnected) {
+      return;
+    }
+
+    if (this.peer && !this.peer.destroyed) {
+      if (this.peer.disconnected) {
+        try {
+          this.peer.reconnect();
+        } catch (e) {
+          console.warn('reconnect error:', e);
+        }
+      }
+      const reconnected = await this.waitForPeerOpen(1500);
+      if (reconnected) {
+        console.log('Peer broker connection verified/re-established');
+        if (!this.isConnected) {
+          if (!this.isHost) {
+            this.startGuestConnectionLoop();
+          } else {
+            this.onStatusChange({
+              state: 'waiting_for_partner',
+              roomId: this.roomId,
+              message: 'Waiting for partner to join...'
+            });
+          }
+        }
+        return;
+      }
+    }
+
+    console.log(`Re-instantiating peer for room ${roomId}...`);
+    const saved = this.getSavedRoomSession();
+    const role = this.isHost ? 'host' : (saved?.role || (window.location.search.includes('room=') ? 'guest' : 'host'));
+
+    if (role === 'host') {
+      await this.createRoom(roomId);
+    } else {
+      await this.joinRoom(roomId, this.localStream);
     }
   }
 
@@ -293,6 +502,7 @@ class TogetherRoom {
     this.conn = conn;
 
     conn.on('open', () => {
+      this.stopGuestConnectionLoop();
       this.isConnected = true;
       this.onStatusChange({
         state: 'connected',
@@ -540,11 +750,18 @@ class TogetherRoom {
     this.isConnected = false;
     this.remoteStream = null;
     this.onRemoteDisconnected();
-    this.onStatusChange({
-      state: 'partner_left',
-      roomId: this.roomId,
-      message: 'Partner disconnected'
-    });
+    if (this.roomId) {
+      this.onStatusChange({
+        state: 'waiting_for_partner',
+        roomId: this.roomId,
+        message: 'Waiting for partner to join...'
+      });
+    } else {
+      this.onStatusChange({
+        state: 'idle',
+        message: 'Left room'
+      });
+    }
   }
 
   /**
@@ -552,6 +769,8 @@ class TogetherRoom {
    */
   leaveRoom() {
     this.stopHeartbeat();
+    this.stopGuestConnectionLoop();
+    this.clearRoomSession();
 
     // 1. Notify partner before closing
     try {

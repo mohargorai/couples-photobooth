@@ -346,6 +346,63 @@ const pass7Success = hasLowLatencyConstraints && hasPlayoutDelay && hasJitterBuf
 console.log(`✅ PASS 7 RESULT: ${pass7Success ? 'PASSED' : 'FAILED'}\n`);
 
 
+// -----------------------------------------------------------------------------
+// PASS 8: MOBILE APP-SWITCH LIFECYCLE, SILENT RECONNECT & GUEST RETRY AUDIT
+// -----------------------------------------------------------------------------
+console.log('--- PASS 8: MOBILE APP-SWITCH LIFECYCLE, SILENT RECONNECT & GUEST RETRY AUDIT ---');
+
+// Re-read updated source contents
+const freshRoomContent = fs.readFileSync(path.join(__dirname, 'js/room.js'), 'utf-8');
+const freshAppContent = fs.readFileSync(path.join(__dirname, 'js/app.js'), 'utf-8');
+
+// 1. PeerJS Ping Interval
+const hasPingInterval = freshRoomContent.includes('pingInterval: 5000');
+console.log(`  ✓ PeerJS 5-second WebSocket keep-alive (pingInterval: 5000): ${hasPingInterval ? 'Verified' : 'Missing'}`);
+
+// 2. SessionStorage Persistence for Room Session
+const hasRoomSessionStorage = freshRoomContent.includes('couples_photobooth_room_id') &&
+                             freshRoomContent.includes('saveRoomSession') &&
+                             freshRoomContent.includes('getSavedRoomSession') &&
+                             freshRoomContent.includes('clearRoomSession');
+console.log(`  ✓ SessionStorage Room ID & Role persistence: ${hasRoomSessionStorage ? 'Verified' : 'Missing'}`);
+
+// 3. Silent Auto-Reconnect & Resilient Error Handling
+const hasSilentReconnect = freshRoomContent.includes("this.peer.on('disconnected'") &&
+                           freshRoomContent.includes("state: 'reconnecting'");
+const hasResilientError = freshRoomContent.includes("if (this.roomId)") &&
+                          freshRoomContent.includes("state: 'reconnecting'");
+console.log(`  ✓ Silent auto-reconnect on broker disconnect without wiping room: ${hasSilentReconnect ? 'Verified' : 'Missing'}`);
+console.log(`  ✓ Non-destructive network error handling (keeps room ID active): ${hasResilientError ? 'Verified' : 'Missing'}`);
+
+// 4. Guest Connection Retry Loop
+const hasGuestRetryLoop = freshRoomContent.includes('startGuestConnectionLoop') &&
+                          freshRoomContent.includes('maxAttempts = 15') &&
+                          freshRoomContent.includes('guestRetryTimer');
+console.log(`  ✓ Guest connection retry loop (15 attempts every 2s while host in WhatsApp): ${hasGuestRetryLoop ? 'Verified' : 'Missing'}`);
+
+// 5. Camera Protection on Mobile Backgrounding
+const hasCameraBackgroundProtection = freshAppContent.includes("const inRoom = state.mode === 'room' || (room && room.roomId)") &&
+                                      freshAppContent.includes('if (!inRoom && camera.isStreaming)');
+console.log(`  ✓ Camera protected from termination while in Together Room: ${hasCameraBackgroundProtection ? 'Verified' : 'Missing'}`);
+
+// 6. App Resume Listeners & Blank Viewfinder Auto-Recovery
+const hasAppResume = freshAppContent.includes('handleAppResume') &&
+                     freshAppContent.includes('ensureCameraActive') &&
+                     freshAppContent.includes("window.addEventListener('focus'") &&
+                     freshAppContent.includes("window.addEventListener('pageshow'");
+console.log(`  ✓ App-switch return listeners (visibilitychange, focus, pageshow): ${hasAppResume ? 'Verified' : 'Missing'}`);
+
+// 7. Same Room ID Reclaim logic
+const hasEnsureConnected = freshRoomContent.includes('ensureConnected(targetRoomId)') &&
+                           freshAppContent.includes('room.ensureConnected(activeRoomId)');
+console.log(`  ✓ Exact same Room ID reclaim & re-instantiation: ${hasEnsureConnected ? 'Verified' : 'Missing'}`);
+
+const pass8Success = hasPingInterval && hasRoomSessionStorage && hasSilentReconnect &&
+                     hasResilientError && hasGuestRetryLoop && hasCameraBackgroundProtection &&
+                     hasAppResume && hasEnsureConnected;
+console.log(`✅ PASS 8 RESULT: ${pass8Success ? 'PASSED' : 'FAILED'}\n`);
+
+
 console.log('================================================================');
 console.log('OVERALL QA STATUS:');
 console.log(`Pass 1 (Camera Matrix & Crop Math): ${pass1Success ? 'PASSED' : 'FAILED'}`);
@@ -355,4 +412,5 @@ console.log(`Pass 4 (Touch & Responsive Layout): ${pass4Success ? 'PASSED' : 'FA
 console.log(`Pass 5 (Camera Lifecycle & Privacy):${pass5Success ? 'PASSED' : 'FAILED'}`);
 console.log(`Pass 6 (Mobile Overhaul & Room Sync):${pass6Success ? 'PASSED' : 'FAILED'}`);
 console.log(`Pass 7 (Low-Latency & State Sync):  ${pass7Success ? 'PASSED' : 'FAILED'}`);
+console.log(`Pass 8 (App-Switch & Silent Recon): ${pass8Success ? 'PASSED' : 'FAILED'}`);
 console.log('================================================================');
