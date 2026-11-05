@@ -35,9 +35,9 @@ class PhotoboothExporter {
    * Render the complete photobooth strip to high-DPI canvas
    */
   async renderStrip({
-    photos,             // Array of 4 user photo dataURLs
+    photos,             // Array of 4 user photo dataURLs or blob URLs
     mode,               // 'solo' or 'together'
-    togetherPhotos,     // Array of 4 partner photo dataURLs
+    togetherPhotos,     // Array of 4 partner photo dataURLs or blob URLs
     frameStyle = 'classic',
     stickers = [],
     caption = 'you & me always',
@@ -46,12 +46,23 @@ class PhotoboothExporter {
     dateText = '',
     domStripRect = null
   }) {
-    const W = 800;
-    const H = 2500;
+    // 1. Single Source of Truth Geometry: Canonical 800 x 2200, exported at 2x Retina 1600 x 4400
+    const CANONICAL_W = 800;
+    const CANONICAL_H = 2200;
+    const RETINA_SCALE = 2;
+
     const canvas = document.createElement('canvas');
-    canvas.width = W;
-    canvas.height = H;
+    canvas.width = CANONICAL_W * RETINA_SCALE;   // 1600
+    canvas.height = CANONICAL_H * RETINA_SCALE; // 4400
     const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    // Scale drawing context to Retina resolution so all drawing uses 800 x 2200 coordinates
+    ctx.scale(RETINA_SCALE, RETINA_SCALE);
+
+    const W = CANONICAL_W;
+    const H = CANONICAL_H;
 
     if (document.fonts && document.fonts.ready) {
       await document.fonts.ready;
@@ -60,12 +71,14 @@ class PhotoboothExporter {
     // 1. Draw One of 8 Border Frame Designs
     this.drawFrameBackground(ctx, W, H, frameStyle);
 
-    // 2. Geometry for 4 Photo Slots
-    const marginSide = 60;
-    const marginTop = 70;
-    const slotGap = 35;
-    const slotW = W - (marginSide * 2); // 680px
-    const slotH = 490;
+    // 2. Strict Mathematical Geometry for 4 Photo Slots
+    // W=800, marginSide=48, slotW=704 (48 + 704 + 48 = 800)
+    // H=2200, marginTop=56, slotH=440, gap=28 -> 4*440 + 3*28 + 56 = 1900, footer=300
+    const marginSide = 48;
+    const marginTop = 56;
+    const slotGap = 28;
+    const slotW = 704;
+    const slotH = 440;
     const photoRadius = 14;
 
     // 3. Draw Photos
@@ -74,7 +87,7 @@ class PhotoboothExporter {
 
       if (mode === 'together') {
         const gap = 14;
-        const halfW = (slotW - gap) / 2;
+        const halfW = (slotW - gap) / 2; // 345
 
         // User Photo (Left)
         const userImgData = photos && photos[i];
@@ -94,7 +107,7 @@ class PhotoboothExporter {
           this.drawSlotEmptyState(ctx, marginSide + halfW + gap, slotY, halfW, slotH, photoRadius, 'Partner');
         }
 
-        // Center seam
+        // Center seam (at exact x=400)
         ctx.save();
         ctx.strokeStyle = '#E8BDC4';
         ctx.lineWidth = 2;
@@ -127,23 +140,20 @@ class PhotoboothExporter {
     }
 
     // 4. Draw Footer (Typography & Ink)
-    const footerY = marginTop + 4 * slotH + 3 * slotGap + 20;
+    const footerY = 1900;
     this.drawFooter(ctx, W, H, footerY, caption, dateText, fontFamily, inkColor, frameStyle);
 
     // 5. Draw Stickers with 1:1 DOM scale and rotation mapping
     if (stickers && stickers.length > 0) {
       const domW = domStripRect ? domStripRect.width : 340;
-      const domH = domStripRect ? domStripRect.height : 700;
+      const scaleFactor = W / domW;
 
       for (const sticker of stickers) {
         try {
           const img = await this.loadSvgImage(sticker.svg);
-
-          const baseRatioW = sticker.width / domW;
-          const baseRatioH = sticker.height / domH;
-
-          const stickerCanvasW = baseRatioW * W * (sticker.scale || 1);
-          const stickerCanvasH = baseRatioH * H * (sticker.scale || 1);
+          const stickerScale = sticker.scale || 1;
+          const stickerCanvasW = sticker.width * scaleFactor * stickerScale;
+          const stickerCanvasH = sticker.height * scaleFactor * stickerScale;
 
           const stickerCanvasX = (sticker.xPercent * W) + (stickerCanvasW / 2);
           const stickerCanvasY = (sticker.yPercent * H) + (stickerCanvasH / 2);
@@ -165,7 +175,20 @@ class PhotoboothExporter {
       }
     }
 
-    return canvas;
+    // Convert to Blob, File, and Object URL
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png', 1.0));
+    const blobUrl = blob ? URL.createObjectURL(blob) : '';
+    const safeCaption = (caption || 'our-photobooth').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const filename = `${safeCaption || 'couples'}-photobooth-strip.png`;
+    const file = blob ? new File([blob], filename, { type: 'image/png' }) : null;
+
+    return {
+      canvas,
+      blob,
+      blobUrl,
+      file,
+      filename
+    };
   }
 
   /**
@@ -421,22 +444,22 @@ class PhotoboothExporter {
     // Divider bar
     ctx.save();
     ctx.strokeStyle = inkColor;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2.2;
     ctx.lineCap = 'round';
 
     const divW = 180;
     ctx.beginPath();
-    ctx.moveTo(cx - divW, footerY + 15);
-    ctx.bezierCurveTo(cx - divW * 0.5, footerY + 10, cx - divW * 0.2, footerY + 20, cx - 25, footerY + 15);
+    ctx.moveTo(cx - divW, footerY + 30);
+    ctx.bezierCurveTo(cx - divW * 0.5, footerY + 25, cx - divW * 0.2, footerY + 35, cx - 25, footerY + 30);
     ctx.stroke();
 
     ctx.beginPath();
-    ctx.moveTo(cx + 25, footerY + 15);
-    ctx.bezierCurveTo(cx + divW * 0.2, footerY + 20, cx + divW * 0.5, footerY + 10, cx + divW, footerY + 15);
+    ctx.moveTo(cx + 25, footerY + 30);
+    ctx.bezierCurveTo(cx + divW * 0.2, footerY + 35, cx + divW * 0.5, footerY + 25, cx + divW, footerY + 30);
     ctx.stroke();
 
     // Center White Rose on divider
-    this.drawMiniWhiteRose(ctx, cx, footerY + 15, 12);
+    this.drawMiniWhiteRose(ctx, cx, footerY + 30, 14);
     ctx.restore();
 
     // Editable Caption with selected font & ink
@@ -447,18 +470,18 @@ class PhotoboothExporter {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     const text = caption || 'mohar & gungun forever';
-    ctx.fillText(text, cx, footerY + 80);
+    ctx.fillText(text, cx, footerY + 110);
 
     // Date stamp
     ctx.font = '24px Nunito, sans-serif';
     ctx.fillStyle = inkColor === '#5A3E42' ? '#8A686D' : inkColor;
     ctx.letterSpacing = '2px';
     const date = dateText || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    ctx.fillText(`• ${date} •`, cx, footerY + 140);
+    ctx.fillText(`• ${date} •`, cx, footerY + 175);
 
     ctx.font = '16px Nunito, sans-serif';
     ctx.fillStyle = '#BCA3A7';
-    ctx.fillText('made by mohar with love for gungun <3', cx, footerY + 185);
+    ctx.fillText('made by mohar with love for gungun <3', cx, footerY + 230);
     ctx.restore();
   }
 
@@ -559,48 +582,70 @@ class PhotoboothExporter {
   }
 
   loadImage(src) {
+    if (src instanceof HTMLImageElement && src.complete && src.naturalWidth > 0) {
+      return Promise.resolve(src);
+    }
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.onload = () => resolve(img);
       img.onerror = () => reject(new Error('Failed to load image for canvas export'));
-      img.src = src;
+      img.src = typeof src === 'string' ? src : (src && src.src ? src.src : src);
     });
   }
 
-  async shareOrDownload(canvas, filename = 'couples-photobooth-strip.png') {
-    return new Promise((resolve) => {
-      canvas.toBlob(async (blob) => {
-        if (!blob) return resolve(false);
+  async shareOrDownload(param, filename = 'couples-photobooth-strip.png') {
+    // Supports either an export result object { file, blob, blobUrl, filename } or a canvas element
+    let file = null;
+    let blob = null;
+    let blobUrl = '';
+    let name = filename;
 
-        if (navigator.canShare) {
-          const file = new File([blob], filename, { type: 'image/png' });
-          if (navigator.canShare({ files: [file] })) {
-            try {
-              await navigator.share({
-                files: [file],
-                title: 'Our Couples Photobooth Strip',
-                text: 'A romantic photobooth moment, made just for us'
-              });
-              return resolve(true);
-            } catch (err) {
-              if (err.name === 'AbortError') return resolve(false);
-              console.warn('Web Share failed, falling back to download:', err);
-            }
-          }
+    if (param && param.canvas) {
+      file = param.file;
+      blob = param.blob;
+      blobUrl = param.blobUrl;
+      name = param.filename || filename;
+    } else if (param instanceof HTMLCanvasElement) {
+      blob = await new Promise(res => param.toBlob(res, 'image/png', 1.0));
+      if (blob) {
+        file = new File([blob], filename, { type: 'image/png' });
+        blobUrl = URL.createObjectURL(blob);
+      }
+    } else if (param && param.blob) {
+      blob = param.blob;
+      file = param.file || new File([blob], filename, { type: 'image/png' });
+      blobUrl = param.blobUrl || URL.createObjectURL(blob);
+    }
+
+    if (!blob && !blobUrl && !file) return false;
+
+    // 1. On Mobile Devices: Use Native Web Share API with File
+    if (navigator.canShare && file) {
+      if (navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: 'Our Couples Photobooth Strip',
+            text: 'made by mohar with love for gungun <3'
+          });
+          return true;
+        } catch (err) {
+          if (err.name === 'AbortError') return false;
+          console.warn('Web Share failed, falling back to download:', err);
         }
+      }
+    }
 
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(url), 1500);
-        resolve(true);
-      }, 'image/png');
-    });
+    // 2. Direct Blob URL Download fallback
+    const downloadUrl = blobUrl || URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    return true;
   }
 }
 

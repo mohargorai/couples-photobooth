@@ -322,7 +322,7 @@ class PhotoboothCamera {
   /**
    * Capture a single frame from video into a high-res JPEG dataURL
    */
-  captureFrame(targetWidth = 600, targetHeight = 450, customTransform = null) {
+  captureFrame(targetWidth = 960, targetHeight = 720, customTransform = null) {
     if (!this.isStreaming || !this.video.videoWidth) {
       throw new Error('Camera stream is not active');
     }
@@ -331,6 +331,8 @@ class PhotoboothCamera {
     canvas.width = targetWidth;
     canvas.height = targetHeight;
     const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
 
     const transform = customTransform || this.getTransformState();
     PhotoboothCamera.drawTransformedImage(ctx, this.video, 0, 0, targetWidth, targetHeight, transform);
@@ -339,9 +341,44 @@ class PhotoboothCamera {
   }
 
   /**
+   * Capture a single frame from video into a high-res Blob and Object URL (Zero-Flicker Pre-decoded)
+   */
+  async captureFrameBlob(targetWidth = 960, targetHeight = 720, customTransform = null) {
+    if (!this.isStreaming || !this.video.videoWidth) {
+      throw new Error('Camera stream is not active');
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    const transform = customTransform || this.getTransformState();
+    PhotoboothCamera.drawTransformedImage(ctx, this.video, 0, 0, targetWidth, targetHeight, transform);
+
+    return new Promise((resolve) => {
+      canvas.toBlob(async (blob) => {
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+        if (!blob) {
+          return resolve({ url: dataUrl, blob: null, img: null, dataUrl });
+        }
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        img.src = url;
+        try {
+          await img.decode();
+        } catch (e) {}
+        resolve({ url, blob, img, dataUrl });
+      }, 'image/jpeg', 0.95);
+    });
+  }
+
+  /**
    * Capture from any external HTML5 video element (e.g. Remote Partner Video)
    */
-  static captureExternalVideo(videoEl, targetWidth = 600, targetHeight = 450, transform = {}) {
+  static captureExternalVideo(videoEl, targetWidth = 960, targetHeight = 720, transform = {}) {
     if (!videoEl || !videoEl.videoWidth) {
       throw new Error('Video element not active');
     }
@@ -350,15 +387,51 @@ class PhotoboothCamera {
     canvas.width = targetWidth;
     canvas.height = targetHeight;
     const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
 
     PhotoboothCamera.drawTransformedImage(ctx, videoEl, 0, 0, targetWidth, targetHeight, transform);
     return canvas.toDataURL('image/jpeg', 0.95);
   }
 
   /**
+   * Capture from external video into high-res Blob and Object URL
+   */
+  static async captureExternalVideoBlob(videoEl, targetWidth = 960, targetHeight = 720, transform = {}) {
+    if (!videoEl || !videoEl.videoWidth) {
+      throw new Error('Video element not active');
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    PhotoboothCamera.drawTransformedImage(ctx, videoEl, 0, 0, targetWidth, targetHeight, transform);
+
+    return new Promise((resolve) => {
+      canvas.toBlob(async (blob) => {
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+        if (!blob) {
+          return resolve({ url: dataUrl, blob: null, img: null, dataUrl });
+        }
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        img.src = url;
+        try {
+          await img.decode();
+        } catch (e) {}
+        resolve({ url, blob, img, dataUrl });
+      }, 'image/jpeg', 0.95);
+    });
+  }
+
+  /**
    * Process a gallery-uploaded image file
    */
-  static processUploadedImage(file, targetWidth = 600, targetHeight = 450) {
+  static processUploadedImage(file, targetWidth = 960, targetHeight = 720) {
     return new Promise((resolve, reject) => {
       if (!file || !file.type.startsWith('image/')) {
         return reject(new Error('Please select an image file.'));
@@ -372,11 +445,25 @@ class PhotoboothCamera {
           canvas.width = targetWidth;
           canvas.height = targetHeight;
           const ctx = canvas.getContext('2d');
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
 
           const crop = PhotoboothCamera.calculateCrop(img.width, img.height, targetWidth, targetHeight);
           ctx.drawImage(img, crop.sx, crop.sy, crop.sWidth, crop.sHeight, 0, 0, targetWidth, targetHeight);
 
-          resolve(canvas.toDataURL('image/jpeg', 0.95));
+          canvas.toBlob(async (blob) => {
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+            if (!blob) {
+              return resolve({ url: dataUrl, blob: null, img, dataUrl });
+            }
+            const url = URL.createObjectURL(blob);
+            const decodedImg = new Image();
+            decodedImg.src = url;
+            try {
+              await decodedImg.decode();
+            } catch (err) {}
+            resolve({ url, blob, img: decodedImg, dataUrl });
+          }, 'image/jpeg', 0.95);
         };
         img.onerror = () => reject(new Error('Failed to load image.'));
         img.src = e.target.result;

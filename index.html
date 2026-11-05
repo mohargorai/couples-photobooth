@@ -754,20 +754,22 @@
         <div class="export-strip-slot-frame">
           <div class="export-slot-lip"></div>
           <div id="export-preview-container" class="export-preview-container">
-            <canvas id="export-canvas" class="export-canvas"></canvas>
+            <img id="export-strip-img" class="export-strip-img" alt="Photobooth Strip" src="" />
+            <canvas id="export-canvas" class="export-canvas is-hidden"></canvas>
           </div>
+          <p class="export-gallery-tip">Tip: Tap "Save to Camera Roll" &rarr; "Save Image", or long-press the strip above to save directly to your Gallery.</p>
         </div>
 
         <div class="export-actions">
           <button id="btn-download-png" class="btn-primary export-btn">
             <svg viewBox="0 0 24 24" class="svg-icon" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            <span>Save to Camera Roll (High Res)</span>
+            <span>Save to Camera Roll</span>
           </button>
 
-          <button id="btn-share-strip" class="btn-secondary export-btn">
-            <svg viewBox="0 0 24 24" class="svg-icon" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-            <span>Share Strip</span>
-          </button>
+          <a id="link-download-png" class="btn-secondary export-btn" download="couples-photobooth-strip.png" href="#">
+            <svg viewBox="0 0 24 24" class="svg-icon" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Download PNG File</span>
+          </a>
         </div>
       </div>
     </div>

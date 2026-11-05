@@ -17,7 +17,10 @@ class TogetherRoom {
     onStatusRequest,
     onStripStateSync,
     onPeerLeft,
-    onSyncState
+    onSyncState,
+    onDecorationSync,
+    onSlotPhotoSync,
+    onTriggerPrint
   }) {
     this.peer = null;
     this.conn = null;
@@ -49,6 +52,9 @@ class TogetherRoom {
     this.onStripStateSync = onStripStateSync || (() => {});
     this.onPeerLeft = onPeerLeft || (() => {});
     this.onSyncState = onSyncState || (() => {});
+    this.onDecorationSync = onDecorationSync || (() => {});
+    this.onSlotPhotoSync = onSlotPhotoSync || (() => {});
+    this.onTriggerPrint = onTriggerPrint || (() => {});
   }
 
   /**
@@ -622,6 +628,18 @@ class TogetherRoom {
         this.onCustomizationSync(data);
         break;
 
+      case 'SYNC_DECORATION':
+        if (this.onDecorationSync) this.onDecorationSync(data.payload || data);
+        break;
+
+      case 'SYNC_SLOT_PHOTO':
+        if (this.onSlotPhotoSync) this.onSlotPhotoSync(data);
+        break;
+
+      case 'TRIGGER_PRINT_STRIP':
+        if (this.onTriggerPrint) this.onTriggerPrint();
+        break;
+
       default:
         break;
     }
@@ -742,6 +760,28 @@ class TogetherRoom {
     this.broadcast({
       type: 'SYNC_CUSTOMIZATION',
       ...data
+    });
+  }
+
+  broadcastDecoration(payload) {
+    this.broadcast({
+      type: 'SYNC_DECORATION',
+      payload
+    });
+  }
+
+  broadcastSlotPhoto({ slotIndex, role, dataUrl }) {
+    this.broadcast({
+      type: 'SYNC_SLOT_PHOTO',
+      slotIndex,
+      role,
+      dataUrl
+    });
+  }
+
+  broadcastTriggerPrint() {
+    this.broadcast({
+      type: 'TRIGGER_PRINT_STRIP'
     });
   }
 

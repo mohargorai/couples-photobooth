@@ -613,13 +613,19 @@ class StickerStudio {
       this.updateStickerTransform(sticker, this.startStickerState.containerW, this.startStickerState.containerH);
     }
 
-    if (this.onStickersChange) this.onStickersChange(this.stickers);
+    const now = Date.now();
+    if (!this._lastMoveBroadcast || (now - this._lastMoveBroadcast >= 40)) {
+      this._lastMoveBroadcast = now;
+      if (this.onStickersChange) this.onStickersChange(this.stickers);
+    }
   }
 
   handlePointerUp(e) {
     if (this.activePointerId !== null && e.pointerId === this.activePointerId) {
       this.pointerMode = null;
       this.activePointerId = null;
+      this._lastMoveBroadcast = 0;
+      if (this.onStickersChange) this.onStickersChange(this.stickers);
     }
   }
 

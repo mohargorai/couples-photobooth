@@ -81,6 +81,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnPrintStrip = document.getElementById('btn-print-strip');
   const exportModal = document.getElementById('export-modal');
   const exportCanvas = document.getElementById('export-canvas');
+  const exportStripImg = document.getElementById('export-strip-img');
+  const linkDownloadPng = document.getElementById('link-download-png');
   const btnCloseExport = document.getElementById('btn-close-export');
   const btnDownloadPng = document.getElementById('btn-download-png');
   const btnShareStrip = document.getElementById('btn-share-strip');
@@ -116,6 +118,8 @@ document.addEventListener('DOMContentLoaded', () => {
     inkColor: '#5A3E42',    // #5A3E42, #D85A67, #C47A87
     userPhotos: [null, null, null, null],
     togetherPhotos: [null, null, null, null],
+    decodedUserPhotos: [null, null, null, null],
+    decodedTogetherPhotos: [null, null, null, null],
     isMuted: false,
     isCameraActive: true,
     cameraManuallyTurnedOff: false,
@@ -253,9 +257,39 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  let decorationSyncDebounce = null;
+  function broadcastDecorationSync(immediate = false) {
+    if (state.mode !== 'room' || !room.isConnected) return;
+
+    const send = () => {
+      room.broadcastDecoration({
+        frameId: state.frameStyle,
+        captionText: captionInput ? captionInput.value : '',
+        dateText: dateInput ? dateInput.value : '',
+        fontFamily: state.fontFamily,
+        inkColor: state.inkColor,
+        stickers: stickers && stickers.stickers ? stickers.stickers.map(s => ({
+          catalogId: s.catalogId,
+          xPercent: s.xPercent,
+          yPercent: s.yPercent,
+          scale: s.scale,
+          rotation: s.rotation
+        })) : []
+      });
+    };
+
+    if (immediate) {
+      clearTimeout(decorationSyncDebounce);
+      send();
+    } else {
+      clearTimeout(decorationSyncDebounce);
+      decorationSyncDebounce = setTimeout(send, 100);
+    }
+  }
+
   stickers.onStickersChange = () => {
     saveStripStateToSession();
-    syncStripToPartner();
+    broadcastDecorationSync(false);
   };
 
   // White Rose and Camera-Off SVGs for partner status card
@@ -431,6 +465,61 @@ document.addEventListener('DOMContentLoaded', () => {
 
     onStatusChange: (status) => {
       updateRoomUI(status);
+    },
+
+    onDecorationSync: (payload) => {
+      if (!payload) return;
+      if (payload.frameId) {
+        state.frameStyle = payload.frameId;
+        applyFrameStyle(payload.frameId, false);
+      }
+      if (payload.captionText !== undefined && captionInput) {
+        captionInput.value = payload.captionText;
+        if (stripFooterCaption) stripFooterCaption.textContent = payload.captionText;
+      }
+      if (payload.dateText !== undefined && dateInput) {
+        dateInput.value = payload.dateText;
+        if (stripFooterDate) stripFooterDate.textContent = `  ${payload.dateText}  `;
+      }
+      if (payload.fontFamily) {
+        state.fontFamily = payload.fontFamily;
+        applyFontFamily(payload.fontFamily, false);
+      }
+      if (payload.inkColor) {
+        state.inkColor = payload.inkColor;
+        applyInkColor(payload.inkColor, false);
+      }
+      if (Array.isArray(payload.stickers) && stickers) {
+        stickers.clearAll();
+        payload.stickers.forEach(s => {
+          stickers.addSticker(s.catalogId, {
+            xPercent: s.xPercent,
+            yPercent: s.yPercent,
+            scale: s.scale,
+            rotation: s.rotation
+          });
+        });
+        stickers.selectedSticker = null;
+        document.querySelectorAll('.sticker-element').forEach(el => el.classList.remove('is-selected'));
+      }
+      saveStripStateToSession();
+    },
+
+    onSlotPhotoSync: async (data) => {
+      const { slotIndex, dataUrl } = data;
+      if (slotIndex !== undefined && dataUrl) {
+        state.togetherPhotos[slotIndex] = dataUrl;
+        const img = new Image();
+        img.src = dataUrl;
+        try { await img.decode(); } catch (e) {}
+        state.decodedTogetherPhotos[slotIndex] = img;
+        updateStripDOM();
+        saveStripStateToSession();
+      }
+    },
+
+    onTriggerPrint: () => {
+      triggerPrintWorkflow(false);
     }
   });
 
@@ -680,6 +769,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   btnClearStickers.addEventListener('click', () => {
     stickers.clearAll();
+    broadcastDecorationSync(true);
   });
 
   // One-Tap Sticker Layout Presets
@@ -689,6 +779,7 @@ document.addEventListener('DOMContentLoaded', () => {
       stickers.applyPreset(preset);
       if (state.mode === 'room' && room.isConnected) {
         room.broadcastCustomization({ preset });
+        broadcastDecorationSync(true);
       }
     });
   });
@@ -947,8 +1038,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!file) return;
 
     try {
-      const dataUrl = await PhotoboothCamera.processUploadedImage(file, 600, 450);
-      state.userPhotos[state.activeSlotIndex] = dataUrl;
+      const uploadRes = await PhotoboothCamera.processUploadedImage(file, 960, 720);
+      const photoUrl = (uploadRes && uploadRes.url) ? uploadRes.url : uploadRes;
+      const photoImg = (uploadRes && uploadRes.img) ? uploadRes.img : null;
+      state.userPhotos[state.activeSlotIndex] = photoUrl;
+      state.decodedUserPhotos[state.activeSlotIndex] = photoImg;
       updateStripDOM();
       saveStripStateToSession();
       syncStripToPartner();
@@ -1082,14 +1176,36 @@ document.addEventListener('DOMContentLoaded', () => {
         contentWrapper.classList.add('mode-together-view');
         partnerWrapper.classList.remove('is-hidden');
 
-        userImg.src = state.userPhotos[i] || PhotoboothCamera.generatePlaceholder(i, `Pose ${i + 1}`);
-        partnerImg.src = state.togetherPhotos[i] || PhotoboothCamera.generatePlaceholder(i, `Partner ${i + 1}`, true);
+        const userSrc = state.userPhotos[i] || PhotoboothCamera.generatePlaceholder(i, `Pose ${i + 1}`);
+        const partnerSrc = state.togetherPhotos[i] || PhotoboothCamera.generatePlaceholder(i, `Partner ${i + 1}`, true);
+
+        if (userImg) {
+          userImg.loading = 'eager';
+          userImg.decoding = 'sync';
+          if (userImg.getAttribute('src') !== userSrc) {
+            userImg.src = userSrc;
+          }
+        }
+        if (partnerImg) {
+          partnerImg.loading = 'eager';
+          partnerImg.decoding = 'sync';
+          if (partnerImg.getAttribute('src') !== partnerSrc) {
+            partnerImg.src = partnerSrc;
+          }
+        }
       } else {
         contentWrapper.classList.add('mode-solo-view');
         contentWrapper.classList.remove('mode-together-view');
         partnerWrapper.classList.add('is-hidden');
 
-        userImg.src = state.userPhotos[i] || PhotoboothCamera.generatePlaceholder(i, `Pose ${i + 1}`);
+        const userSrc = state.userPhotos[i] || PhotoboothCamera.generatePlaceholder(i, `Pose ${i + 1}`);
+        if (userImg) {
+          userImg.loading = 'eager';
+          userImg.decoding = 'sync';
+          if (userImg.getAttribute('src') !== userSrc) {
+            userImg.src = userSrc;
+          }
+        }
       }
     }
   }
@@ -1128,20 +1244,27 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!file) return;
 
       try {
-        const dataUrl = await PhotoboothCamera.processUploadedImage(file, 600, 450);
+        const uploadRes = await PhotoboothCamera.processUploadedImage(file, 960, 720);
+        const photoUrl = (uploadRes && uploadRes.url) ? uploadRes.url : uploadRes;
+        const photoImg = (uploadRes && uploadRes.img) ? uploadRes.img : null;
+
         if (state.mode === 'together' || state.mode === 'room') {
           if (!state.userPhotos[index]) {
-            state.userPhotos[index] = dataUrl;
+            state.userPhotos[index] = photoUrl;
+            state.decodedUserPhotos[index] = photoImg;
             showToast(`Saved photo to Slot ${index + 1} for you!`);
           } else if (!state.togetherPhotos[index]) {
-            state.togetherPhotos[index] = dataUrl;
+            state.togetherPhotos[index] = photoUrl;
+            state.decodedTogetherPhotos[index] = photoImg;
             showToast(`Saved photo to Slot ${index + 1} for partner!`);
           } else {
-            state.userPhotos[index] = dataUrl;
+            state.userPhotos[index] = photoUrl;
+            state.decodedUserPhotos[index] = photoImg;
             showToast(`Updated Slot ${index + 1}!`);
           }
         } else {
-          state.userPhotos[index] = dataUrl;
+          state.userPhotos[index] = photoUrl;
+          state.decodedUserPhotos[index] = photoImg;
           showToast(`Saved photo to Slot ${index + 1}!`);
         }
         updateStripDOM();
@@ -1176,23 +1299,35 @@ document.addEventListener('DOMContentLoaded', () => {
     await runCountdown(state.timerDuration);
 
     if (state.mode === 'room' && room.isConnected && remoteWebcamEl.videoWidth) {
-      // Capture local video
-      state.userPhotos[slotIndex] = camera.captureFrame(340, 500);
-      // Capture remote video with remote orientation transforms
-      state.togetherPhotos[slotIndex] = PhotoboothCamera.captureExternalVideo(
+      // High-res captures (960x720)
+      const userRes = await camera.captureFrameBlob(960, 720);
+      const partnerRes = await PhotoboothCamera.captureExternalVideoBlob(
         remoteWebcamEl,
-        340,
-        500,
+        960,
+        720,
         state.remoteTransform
       );
+      state.userPhotos[slotIndex] = userRes.url || userRes.dataUrl;
+      state.decodedUserPhotos[slotIndex] = userRes.img;
+      state.togetherPhotos[slotIndex] = partnerRes.url || partnerRes.dataUrl;
+      state.decodedTogetherPhotos[slotIndex] = partnerRes.img;
+
+      // Broadcast photo to partner client
+      room.broadcastSlotPhoto({
+        slotIndex,
+        role: room.isHost ? 'host' : 'guest',
+        dataUrl: userRes.dataUrl
+      });
     } else {
-      let frameData;
       if (camera.isStreaming) {
-        frameData = camera.captureFrame(600, 450);
+        const userRes = await camera.captureFrameBlob(960, 720);
+        state.userPhotos[slotIndex] = userRes.url || userRes.dataUrl;
+        state.decodedUserPhotos[slotIndex] = userRes.img;
       } else {
-        frameData = PhotoboothCamera.generatePlaceholder(slotIndex, `Captured Pose ${slotIndex + 1}`);
+        const frameData = PhotoboothCamera.generatePlaceholder(slotIndex, `Captured Pose ${slotIndex + 1}`);
+        state.userPhotos[slotIndex] = frameData;
+        state.decodedUserPhotos[slotIndex] = null;
       }
-      state.userPhotos[slotIndex] = frameData;
     }
 
     updateStripDOM();
@@ -1253,6 +1388,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (broadcast && state.mode === 'room' && room.isConnected) {
       room.broadcastCustomization({ frameStyle: frame });
+      broadcastDecorationSync(true);
     }
   }
 
@@ -1271,6 +1407,7 @@ document.addEventListener('DOMContentLoaded', () => {
       saveStripStateToSession();
       if (state.mode === 'room' && room.isConnected) {
         room.broadcastCustomization({ caption: text });
+        broadcastDecorationSync(true);
       }
     });
   });
@@ -1281,6 +1418,7 @@ document.addEventListener('DOMContentLoaded', () => {
     saveStripStateToSession();
     if (state.mode === 'room' && room.isConnected) {
       room.broadcastCustomization({ caption: val });
+      broadcastDecorationSync(false);
     }
   });
 
@@ -1288,6 +1426,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const val = e.target.value.trim() || defaultDateStr;
     stripFooterDate.textContent = `• ${val} •`;
     saveStripStateToSession();
+    broadcastDecorationSync(false);
   });
 
   // Typography Switcher
@@ -1302,6 +1441,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (broadcast && state.mode === 'room' && room.isConnected) {
       room.broadcastCustomization({ fontFamily: font });
+      broadcastDecorationSync(true);
     }
   }
 
@@ -1322,6 +1462,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (broadcast && state.mode === 'room' && room.isConnected) {
       room.broadcastCustomization({ inkColor: ink });
+      broadcastDecorationSync(true);
     }
   }
 
@@ -1335,18 +1476,32 @@ document.addEventListener('DOMContentLoaded', () => {
     stickers.recalculateLayout();
   });
 
-  // Print Photobooth Strip
-  btnPrintStrip.addEventListener('click', async () => {
+  // Print Photobooth Strip Workflow
+  let currentExportResult = null;
+
+  async function triggerPrintWorkflow(broadcast = false) {
+    if (broadcast && state.mode === 'room' && room.isConnected) {
+      room.broadcastTriggerPrint();
+    }
+
     window.photoboothAudio.playDispense();
 
     stripEl.classList.remove('strip-slide-dispense');
     void stripEl.offsetWidth;
     stripEl.classList.add('strip-slide-dispense');
 
-    const renderedCanvas = await exporter.renderStrip({
-      photos: state.userPhotos,
+    const photosToRender = (state.decodedUserPhotos && state.decodedUserPhotos.some(Boolean))
+      ? state.decodedUserPhotos.map((img, idx) => img || state.userPhotos[idx])
+      : state.userPhotos;
+
+    const togetherPhotosToRender = (state.decodedTogetherPhotos && state.decodedTogetherPhotos.some(Boolean))
+      ? state.decodedTogetherPhotos.map((img, idx) => img || state.togetherPhotos[idx])
+      : state.togetherPhotos;
+
+    const exportResult = await exporter.renderStrip({
+      photos: photosToRender,
       mode: (state.mode === 'together' || state.mode === 'room') ? 'together' : 'solo',
-      togetherPhotos: state.togetherPhotos,
+      togetherPhotos: togetherPhotosToRender,
       frameStyle: state.frameStyle,
       stickers: stickers.stickers,
       caption: captionInput.value.trim() || 'mohar & gungun forever',
@@ -1356,14 +1511,32 @@ document.addEventListener('DOMContentLoaded', () => {
       domStripRect: stripEl.getBoundingClientRect()
     });
 
-    exportCanvas.width = renderedCanvas.width;
-    exportCanvas.height = renderedCanvas.height;
-    const ctx = exportCanvas.getContext('2d');
-    ctx.drawImage(renderedCanvas, 0, 0);
+    currentExportResult = exportResult;
+
+    if (exportCanvas) {
+      exportCanvas.width = exportResult.canvas.width;
+      exportCanvas.height = exportResult.canvas.height;
+      const ctx = exportCanvas.getContext('2d');
+      ctx.drawImage(exportResult.canvas, 0, 0);
+    }
+
+    if (exportStripImg) {
+      exportStripImg.src = exportResult.blobUrl;
+    }
+
+    if (linkDownloadPng) {
+      linkDownloadPng.href = exportResult.blobUrl;
+      linkDownloadPng.download = exportResult.filename;
+      linkDownloadPng.classList.remove('is-hidden');
+    }
 
     setTimeout(() => {
       exportModal.classList.remove('is-hidden');
     }, 700);
+  }
+
+  btnPrintStrip.addEventListener('click', () => {
+    triggerPrintWorkflow(true);
   });
 
   btnCloseExport.addEventListener('click', () => {
@@ -1377,16 +1550,18 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   btnDownloadPng.addEventListener('click', async () => {
-    const safeTitle = (captionInput.value.trim() || 'our-photobooth')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
-    const filename = `${safeTitle}-strip.png`;
-    await exporter.shareOrDownload(exportCanvas, filename);
+    if (currentExportResult) {
+      await exporter.shareOrDownload(currentExportResult);
+    } else {
+      await exporter.shareOrDownload(exportCanvas, 'couples-photobooth-strip.png');
+    }
   });
 
   btnShareStrip.addEventListener('click', async () => {
-    const filename = 'couples-photobooth-strip.png';
-    await exporter.shareOrDownload(exportCanvas, filename);
+    if (currentExportResult) {
+      await exporter.shareOrDownload(currentExportResult);
+    } else {
+      await exporter.shareOrDownload(exportCanvas, 'couples-photobooth-strip.png');
+    }
   });
 });

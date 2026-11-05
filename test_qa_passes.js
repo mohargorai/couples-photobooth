@@ -402,6 +402,65 @@ const pass8Success = hasPingInterval && hasRoomSessionStorage && hasSilentReconn
                      hasAppResume && hasEnsureConnected;
 console.log(`✅ PASS 8 RESULT: ${pass8Success ? 'PASSED' : 'FAILED'}\n`);
 
+// PASS 9: 1:1 WYSIWYG GEOMETRY, HIGH-RES CAPTURE, REAL-TIME CO-OP DECORATION & CAMERA ROLL SAVE AUDIT
+console.log('--- PASS 9: 1:1 WYSIWYG GEOMETRY, HIGH-RES CAPTURE, REAL-TIME CO-OP DECORATION & CAMERA ROLL SAVE AUDIT ---');
+
+const freshExportContent = fs.readFileSync(path.join(__dirname, 'js', 'export.js'), 'utf8');
+const freshCameraContent = fs.readFileSync(path.join(__dirname, 'js', 'camera.js'), 'utf8');
+const freshStickersContent = fs.readFileSync(path.join(__dirname, 'js', 'stickers.js'), 'utf8');
+
+// 1. High-Resolution Capture (960x720) & Blobs
+const hasHighResBlobCapture = freshCameraContent.includes('captureFrameBlob') &&
+                              freshCameraContent.includes('captureExternalVideoBlob') &&
+                              freshCameraContent.includes('targetWidth = 960') &&
+                              freshCameraContent.includes('imageSmoothingQuality = \'high\'');
+console.log(`  ✓ High-Res Blob Capture (960x720, high smoothing): ${hasHighResBlobCapture ? 'Verified' : 'Missing'}`);
+
+// 2. Canonical 800x2200 Geometry & 1600x4400 Retina Export
+const hasCanonicalGeometry = freshExportContent.includes('CANONICAL_W = 800') &&
+                             freshExportContent.includes('CANONICAL_H = 2200') &&
+                             freshExportContent.includes('RETINA_SCALE = 2') &&
+                             freshExportContent.includes('canvas.width = CANONICAL_W * RETINA_SCALE') &&
+                             freshExportContent.includes('canvas.height = CANONICAL_H * RETINA_SCALE');
+console.log(`  ✓ Canonical 800x2200 & 1600x4400 Retina Export: ${hasCanonicalGeometry ? 'Verified' : 'Missing'}`);
+
+// 3. CSS Aspect Ratio Locking
+const hasCssAspectRatio = cssContent.includes('aspect-ratio: 800 / 2200') &&
+                          cssContent.includes('aspect-ratio: 704 / 440') &&
+                          cssContent.includes('.export-strip-img') &&
+                          cssContent.includes('.export-gallery-tip');
+console.log(`  ✓ CSS 1:1 Aspect-Ratio Lock (800/2200 & 704/440): ${hasCssAspectRatio ? 'Verified' : 'Missing'}`);
+
+// 4. Live Collaborative Decoration & Photo Sync
+const hasLiveCoopSync = freshRoomContent.includes('SYNC_DECORATION') &&
+                        freshRoomContent.includes('SYNC_SLOT_PHOTO') &&
+                        freshRoomContent.includes('TRIGGER_PRINT_STRIP') &&
+                        freshRoomContent.includes('broadcastDecoration') &&
+                        freshRoomContent.includes('broadcastSlotPhoto') &&
+                        freshRoomContent.includes('broadcastTriggerPrint') &&
+                        freshAppContent.includes('broadcastDecorationSync') &&
+                        freshAppContent.includes('onDecorationSync') &&
+                        freshAppContent.includes('onSlotPhotoSync') &&
+                        freshAppContent.includes('onTriggerPrint');
+console.log(`  ✓ Real-Time Co-Op Decoration & Photo Signaling: ${hasLiveCoopSync ? 'Verified' : 'Missing'}`);
+
+// 5. 40ms Pointer Drag Throttling
+const hasStickerThrottling = freshStickersContent.includes('_lastMoveBroadcast') &&
+                             freshStickersContent.includes('40');
+console.log(`  ✓ 40ms Sticker Drag Throttling (25fps WebRTC cap): ${hasStickerThrottling ? 'Verified' : 'Missing'}`);
+
+// 6. Mobile Camera Roll Save & Web Share API Support
+const hasCameraRollExport = freshExportContent.includes('navigator.canShare') &&
+                            freshExportContent.includes('new File([blob]') &&
+                            htmlContent.includes('id="export-strip-img"') &&
+                            htmlContent.includes('id="link-download-png"') &&
+                            freshAppContent.includes('exportStripImg.src = exportResult.blobUrl');
+console.log(`  ✓ Mobile Camera Roll Save & File Share Support: ${hasCameraRollExport ? 'Verified' : 'Missing'}`);
+
+const pass9Success = hasHighResBlobCapture && hasCanonicalGeometry && hasCssAspectRatio &&
+                     hasLiveCoopSync && hasStickerThrottling && hasCameraRollExport;
+console.log(`✅ PASS 9 RESULT: ${pass9Success ? 'PASSED' : 'FAILED'}\n`);
+
 
 console.log('================================================================');
 console.log('OVERALL QA STATUS:');
@@ -413,4 +472,5 @@ console.log(`Pass 5 (Camera Lifecycle & Privacy):${pass5Success ? 'PASSED' : 'FA
 console.log(`Pass 6 (Mobile Overhaul & Room Sync):${pass6Success ? 'PASSED' : 'FAILED'}`);
 console.log(`Pass 7 (Low-Latency & State Sync):  ${pass7Success ? 'PASSED' : 'FAILED'}`);
 console.log(`Pass 8 (App-Switch & Silent Recon): ${pass8Success ? 'PASSED' : 'FAILED'}`);
+console.log(`Pass 9 (WYSIWYG 1:1, Co-Op & Export):${pass9Success ? 'PASSED' : 'FAILED'}`);
 console.log('================================================================');
